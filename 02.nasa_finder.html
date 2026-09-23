@@ -1,0 +1,1637 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌌 우주 사진 갤러리 · NASA APOD</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0e27;
+    --bg-mid: #12152E;
+    --bg-lift: #1B1E3A;
+    --card: #242950;
+    --card-hi: #2E3460;
+    --text: #FFFFFF;
+    --off: #E8EAF6;
+    --muted: #A8AED1;
+    --dim: #6A6F95;
+    --purple: #7C6AFF;
+    --purple-lt: #9F90FF;
+    --teal: #5EEAD4;
+    --yellow: #F5D547;
+    --pink: #FF6B9D;
+    --orange: #FFA75E;
+    --coral: #FF7A7A;
+  }
+
+  body {
+    font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* 배경 별 애니메이션 */
+  .stars {
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, white, transparent),
+      radial-gradient(1px 1px at 60% 70%, white, transparent),
+      radial-gradient(2px 2px at 50% 20%, white, transparent),
+      radial-gradient(1px 1px at 80% 40%, white, transparent),
+      radial-gradient(2px 2px at 30% 80%, white, transparent),
+      radial-gradient(1px 1px at 90% 15%, white, transparent),
+      radial-gradient(1px 1px at 15% 60%, white, transparent),
+      radial-gradient(2px 2px at 75% 85%, white, transparent);
+    background-size: 200px 200px;
+    background-repeat: repeat;
+    opacity: 0.35;
+    animation: twinkle 8s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.25; }
+    50% { opacity: 0.5; }
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  header {
+    text-align: center;
+    padding: 30px 0;
+  }
+  header h1 {
+    cursor: pointer;
+    font-size: 40px;
+    background: linear-gradient(90deg, var(--teal), var(--purple-lt), var(--pink));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+    font-weight: 900;
+  }
+  header .sub {
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  /* ============ 컨트롤 패널 ============ */
+  .controls {
+    background: var(--card);
+    border: 1px solid var(--card-hi);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    gap: 16px;
+    align-items: center;
+  }
+  .date-picker {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .date-picker label {
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .date-picker input {
+    background: var(--bg-lift);
+    border: 1.5px solid var(--purple);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 8px 12px;
+    font-family: inherit;
+    font-size: 13px;
+    outline: none;
+    color-scheme: dark;
+  }
+
+  .nav-buttons {
+    display: flex;
+    gap: 6px;
+  }
+  .nav-buttons button {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--bg-lift);
+    border: 1px solid var(--card-hi);
+    color: var(--off);
+    cursor: pointer;
+    font-size: 14px;
+    transition: 0.15s;
+  }
+  .nav-buttons button:hover {
+    background: var(--purple);
+    border-color: var(--purple);
+    transform: scale(1.1);
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+  .btn {
+    padding: 8px 16px;
+    background: var(--bg-lift);
+    border: 1.5px solid;
+    border-radius: 8px;
+    color: var(--off);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: bold;
+    transition: 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.3); }
+  .btn-today    { border-color: var(--teal);   color: var(--teal); }
+  .btn-birthday { border-color: var(--pink);   color: var(--pink); }
+  .btn-random   { border-color: var(--yellow); color: var(--yellow); }
+  .btn-week     { border-color: var(--purple-lt); color: var(--purple-lt); }
+
+  /* ============ 메인 사진 ============ */
+  .main-photo {
+    background: var(--card);
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 24px;
+    border: 1px solid var(--card-hi);
+    animation: fadeIn 0.5s;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .photo-wrap {
+    position: relative;
+    background: black;
+    text-align: center;
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  /* 즐겨찾기 감상 모드: 사진 좌우 꺽쇠 */
+  .nav-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 48px;
+    height: 68px;
+    border: none;
+    border-radius: 10px;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(6px);
+    color: #fff;
+    font-size: 26px;
+    line-height: 1;
+    cursor: pointer;
+    transition: 0.15s;
+    z-index: 4;
+  }
+  .nav-arrow:hover { background: rgba(0,0,0,0.8); transform: translateY(-50%) scale(1.08); }
+  .nav-arrow.prev { left: 10px; }
+  .nav-arrow.next { right: 10px; }
+
+  /* 지금 몇 번째 즐겨찾기를 보고 있는지 */
+  .fav-pos {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(6px);
+    color: var(--off);
+    font-size: 12px;
+    font-weight: bold;
+    padding: 5px 14px;
+    border-radius: 999px;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .fav-pos button {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 11px;
+    cursor: pointer;
+    padding: 0;
+  }
+  .fav-pos button:hover { color: var(--text); }
+
+  .photo-wrap img {
+    max-width: 100%;
+    max-height: 600px;
+    display: block;
+  }
+  /* 영상인 날: 미리보기 그림 + 재생 버튼 (클릭하면 유튜브로) */
+  .apod-video {
+    width: 100%;
+    max-height: 70vh;
+    display: block;
+    background: #000;
+  }
+  .video-card {
+    position: relative;
+    width: 100%;
+    cursor: pointer;
+    display: block;
+  }
+  .video-card img { width: 100%; display: block; }
+  .video-card .play {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 84px; height: 60px;
+    background: rgba(220, 30, 30, 0.92);
+    border-radius: 14px;
+    color: #fff;
+    font-size: 27px;
+    display: flex; align-items: center; justify-content: center;
+    transition: 0.15s;
+  }
+  .video-card:hover .play { background: #ff0000; transform: translate(-50%,-50%) scale(1.1); }
+  .video-note {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    background: rgba(10,14,39,0.85);
+    color: var(--off);
+    font-size: 12px;
+    text-align: center;
+    padding: 8px 12px;
+  }
+  .video-fallback {
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--muted);
+  }
+
+  .photo-wrap iframe {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: none;
+  }
+  .favorite-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(10px);
+    border: none;
+    color: var(--muted);
+    font-size: 20px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .favorite-btn:hover { transform: scale(1.15); }
+  .favorite-btn.active {
+    background: var(--pink);
+    color: white;
+    box-shadow: 0 0 20px rgba(255, 107, 157, 0.6);
+  }
+
+  .photo-info {
+    padding: 24px;
+  }
+  .photo-date {
+    color: var(--teal);
+    font-family: 'Consolas', monospace;
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+  .photo-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--text);
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+  .photo-copyright {
+    color: var(--yellow);
+    font-size: 12px;
+    margin-bottom: 14px;
+  }
+  .photo-desc {
+    color: var(--off);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  /* ============ 갤러리 ============ */
+  .gallery-section {
+    margin-top: 32px;
+  }
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    font-size: 18px;
+    color: var(--off);
+  }
+  .section-title .badge {
+    background: var(--purple);
+    color: white;
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 12px;
+  }
+
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+  }
+  .gallery-item {
+    aspect-ratio: 1;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    background: var(--card);
+    position: relative;
+    transition: 0.25s;
+    border: 1px solid var(--card-hi);
+  }
+  /* 카드 우상단 하트 */
+  .gallery-item .fav-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 3;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(10, 14, 39, 0.7);
+    color: #fff;
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    transition: 0.15s;
+    backdrop-filter: blur(3px);
+  }
+  .gallery-item .fav-btn:hover { background: rgba(10, 14, 39, 0.95); transform: scale(1.15); }
+
+  .gallery-item:hover {
+    transform: scale(1.05);
+    border-color: var(--teal);
+    box-shadow: 0 10px 24px rgba(94, 234, 212, 0.25);
+  }
+  .gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .gallery-date {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+    color: white;
+    padding: 20px 8px 6px;
+    font-size: 10px;
+    font-family: 'Consolas', monospace;
+    text-align: center;
+  }
+
+  /* ============ 즐겨찾기 ============ */
+  .favorites-section {
+    margin-top: 32px;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(255,107,157,0.1), rgba(124,106,255,0.1));
+    border-radius: 16px;
+    border: 1px solid rgba(255,107,157,0.3);
+  }
+  .favorites-empty {
+    text-align: center;
+    padding: 30px 20px;
+    color: var(--dim);
+    font-size: 13px;
+  }
+
+  /* 로딩 */
+  .loading, .error {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  .loading .spinner {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--card-hi);
+    border-top-color: var(--teal);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .demo-badge {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 5px 12px;
+    background: rgba(94, 234, 212, 0.15);
+    border: 1px solid var(--teal);
+    color: var(--teal);
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+  }
+
+  /* ============ 설명 번역 ============ */
+  .desc-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .desc-label {
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--teal);
+    letter-spacing: 0.03em;
+  }
+  .btn-trans {
+    padding: 5px 12px;
+    background: var(--bg-lift);
+    border: 1.5px solid var(--teal);
+    border-radius: 8px;
+    color: var(--teal);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: bold;
+    transition: 0.15s;
+    white-space: nowrap;
+  }
+  .btn-trans:hover { background: var(--card-hi); }
+  .desc-note {
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--dim);
+  }
+
+  /* 사진을 찾는 동안 잠기는 버튼들 */
+  .btn:disabled, .chip:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+  .chip:disabled:hover { background: var(--card); }
+
+  /* ============ 썸네일 격자 (카테고리 갤러리) ============ */
+  /* 사진을 크게 한 장씩 보는 대신, 작은 정사각형으로 촘촘히 늘어놓아
+     한 화면에 훨씬 많은 사진을 볼 수 있게 한다. */
+  .thumb-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: 8px;
+  }
+  .thumb-grid .gallery-item {
+    aspect-ratio: 1 / 1;        /* 정사각형 */
+    border-radius: 8px;
+  }
+  .thumb-grid .gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;          /* 정사각형에 꽉 차게 자른다 */
+  }
+  /* 작은 칸에서는 글자·버튼도 작게 (평소엔 숨기고 마우스 올릴 때만) */
+  .thumb-grid .gallery-date {
+    font-size: 9px;
+    padding: 3px 5px;
+    opacity: 0;
+    transition: 0.15s;
+  }
+  .thumb-grid .gallery-item:hover .gallery-date { opacity: 1; }
+  .thumb-grid .cat-tag {
+    top: 4px; left: 4px;
+    font-size: 8px;
+    padding: 2px 5px;
+    opacity: 0;
+    transition: 0.15s;
+  }
+  .thumb-grid .gallery-item:hover .cat-tag { opacity: 1; }
+  .thumb-grid .fav-btn {
+    top: 3px; right: 3px;
+    width: 22px; height: 22px;
+    font-size: 11px;
+  }
+
+  /* ============ 카테고리 ============ */
+  .cat-groups {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .cat-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-lift);
+    border: 1px solid var(--card-hi);
+    border-radius: 10px;
+    padding: 6px 10px;
+  }
+  .cat-group-label {
+    font-size: 10px;
+    color: var(--dim);
+    font-weight: bold;
+    margin-right: 2px;
+  }
+  .chip {
+    padding: 6px 12px;
+    background: var(--card);
+    border: 1.5px solid transparent;
+    border-radius: 999px;
+    color: var(--off);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: bold;
+    transition: 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .chip:hover { background: var(--card-hi); transform: translateY(-1px); }
+  .chip.active { background: var(--purple); border-color: var(--purple-lt); color: #fff; }
+  .chip .cnt {
+    font-size: 10px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 999px;
+    padding: 1px 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  .cat-tag {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(10,14,39,0.85);
+    color: var(--teal);
+    font-size: 10px;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 999px;
+    z-index: 2;
+  }
+  .cat-progress {
+    grid-column: 1/-1;
+    text-align: center;
+    padding: 30px 12px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.9;
+  }
+  .cat-progress .big {
+    display: block;
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--teal);
+    font-variant-numeric: tabular-nums;
+    margin-top: 6px;
+  }
+
+  .cat-empty {
+    grid-column: 1/-1;
+    text-align: center;
+    color: var(--muted);
+    padding: 30px 12px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 700px) {
+    .controls {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .action-buttons { justify-content: flex-start; }
+    header h1 { font-size: 28px; }
+    .photo-title { font-size: 18px; }
+  }
+
+  footer {
+    text-align: center;
+    padding: 40px 0 20px;
+    color: var(--dim);
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+
+<div class="stars"></div>
+
+<div class="container">
+
+  <header>
+    <h1 onclick="goHome()" title="처음 화면으로">🌌 우주 사진 갤러리</h1>
+    <div class="sub">NASA가 매일 올리는 오늘의 우주 사진 · Astronomy Picture of the Day</div>
+    <div class="demo-badge">✨ DEMO_KEY로 바로 작동! (키 발급 불필요)</div>
+  </header>
+
+  <!-- ============ 컨트롤 패널 ============ -->
+  <div class="controls">
+    <div class="date-picker">
+      <label>📅</label>
+      <input type="date" id="dateInput" />
+    </div>
+
+    <div class="nav-buttons">
+      <button onclick="navigate(-1)" title="이전 날">◀</button>
+      <button onclick="navigate(1)" title="다음 날">▶</button>
+    </div>
+
+    <div class="action-buttons">
+      <button class="btn btn-today" onclick="loadToday()">📍 오늘</button>
+      <button class="btn btn-birthday" onclick="loadBirthday()">🎂 내 생일</button>
+      <button class="btn btn-random" onclick="loadRandom()">🎲 랜덤</button>
+      <button class="btn btn-week" onclick="loadWeekGallery()">🖼️ 이번주 갤러리</button>
+    </div>
+
+  </div>
+
+  <!-- ============ 메인 사진 ============ -->
+  <div id="mainPhoto" class="main-photo">
+    <div class="loading" id="mainLoading">
+      <div class="spinner"></div>
+      <div style="margin-top: 16px;">우주에서 사진 가져오는 중...</div>
+    </div>
+  </div>
+
+  <!-- ============ 갤러리 (이번주) ============ -->
+  <div id="gallerySection" class="gallery-section" style="display:none;">
+    <div class="section-title">
+      🖼️ 이번주 우주 갤러리 <span class="badge" id="galleryCount">7</span>
+    </div>
+    <div id="galleryGrid" class="gallery-grid"></div>
+  </div>
+
+  <!-- ============ 카테고리 탐색 ============ -->
+  <div class="gallery-section">
+    <div class="section-title">
+      🔭 카테고리로 찾아보기 <span class="badge" id="catPoolCount">0</span>
+      <span style="font-size:11px;color:var(--dim);font-weight:normal;">· 종류를 누르면 그 종류만 20장 찾아와요 · 아래로 갈수록 더 자세한 분류</span>
+    </div>
+
+    <div class="cat-groups">
+      <div class="cat-group">
+        <span class="cat-group-label">전체</span>
+        <button class="chip active" data-cat="all" onclick="selectCategory('all')">🌌 모두 <span class="cnt" id="cnt-all"></span></button>
+      </div>
+
+      <div class="cat-group">
+        <span class="cat-group-label">크게</span>
+        <button class="chip" data-cat="earth" onclick="selectCategory('earth')">🌍 지구·하늘 <span class="cnt" id="cnt-earth"></span></button>
+        <button class="chip" data-cat="solar" onclick="selectCategory('solar')">☀️ 태양계 <span class="cnt" id="cnt-solar"></span></button>
+        <button class="chip" data-cat="deep" onclick="selectCategory('deep')">✨ 딥스카이 <span class="cnt" id="cnt-deep"></span></button>
+        <button class="chip" data-cat="tech" onclick="selectCategory('tech')">🚀 탐사·기술 <span class="cnt" id="cnt-tech"></span></button>
+      </div>
+
+      <div class="cat-group">
+        <span class="cat-group-label">지구·하늘</span>
+        <button class="chip" data-cat="aurora" onclick="selectCategory('aurora')">🌈 오로라 <span class="cnt" id="cnt-aurora"></span></button>
+        <button class="chip" data-cat="atmos" onclick="selectCategory('atmos')">🌦️ 대기현상 <span class="cnt" id="cnt-atmos"></span></button>
+        <button class="chip" data-cat="nightscape" onclick="selectCategory('nightscape')">🏔️ 별하늘 풍경 <span class="cnt" id="cnt-nightscape"></span></button>
+      </div>
+
+      <div class="cat-group">
+        <span class="cat-group-label">태양계</span>
+        <button class="chip" data-cat="sun" onclick="selectCategory('sun')">☀️ 태양 <span class="cnt" id="cnt-sun"></span></button>
+        <button class="chip" data-cat="moon" onclick="selectCategory('moon')">🌙 달 <span class="cnt" id="cnt-moon"></span></button>
+        <button class="chip" data-cat="planet" onclick="selectCategory('planet')">🪐 행성 <span class="cnt" id="cnt-planet"></span></button>
+        <button class="chip" data-cat="comet" onclick="selectCategory('comet')">☄️ 혜성·유성 <span class="cnt" id="cnt-comet"></span></button>
+        <button class="chip" data-cat="eclipse" onclick="selectCategory('eclipse')">🌗 일식·월식 <span class="cnt" id="cnt-eclipse"></span></button>
+      </div>
+
+      <div class="cat-group">
+        <span class="cat-group-label">딥스카이</span>
+        <button class="chip" data-cat="galaxy" onclick="selectCategory('galaxy')">🌀 은하 <span class="cnt" id="cnt-galaxy"></span></button>
+        <button class="chip" data-cat="nebula" onclick="selectCategory('nebula')">☁️ 성운 <span class="cnt" id="cnt-nebula"></span></button>
+        <button class="chip" data-cat="cluster" onclick="selectCategory('cluster')">✨ 성단 <span class="cnt" id="cnt-cluster"></span></button>
+        <button class="chip" data-cat="star" onclick="selectCategory('star')">💫 별·항성 <span class="cnt" id="cnt-star"></span></button>
+        <button class="chip" data-cat="blackhole" onclick="selectCategory('blackhole')">🕳️ 블랙홀·퀘이사 <span class="cnt" id="cnt-blackhole"></span></button>
+      </div>
+
+      <div class="cat-group">
+        <span class="cat-group-label">은하 자세히</span>
+        <button class="chip" data-cat="spiral" onclick="selectCategory('spiral')">🌀 나선은하 <span class="cnt" id="cnt-spiral"></span></button>
+        <button class="chip" data-cat="galcluster" onclick="selectCategory('galcluster')">🕸️ 은하단 <span class="cnt" id="cnt-galcluster"></span></button>
+        <button class="chip" data-cat="galaxyEtc" onclick="selectCategory('galaxyEtc')">🌌 그 밖의 은하 <span class="cnt" id="cnt-galaxyEtc"></span></button>
+      </div>
+
+      <div class="cat-group">
+        <span class="cat-group-label">성운 자세히</span>
+        <button class="chip" data-cat="emission" onclick="selectCategory('emission')">🔴 발광성운 <span class="cnt" id="cnt-emission"></span></button>
+        <button class="chip" data-cat="planetary" onclick="selectCategory('planetary')">💍 행성상성운 <span class="cnt" id="cnt-planetary"></span></button>
+        <button class="chip" data-cat="snr" onclick="selectCategory('snr')">💥 초신성 잔해 <span class="cnt" id="cnt-snr"></span></button>
+        <button class="chip" data-cat="darkneb" onclick="selectCategory('darkneb')">⚫ 암흑성운 <span class="cnt" id="cnt-darkneb"></span></button>
+      </div>
+
+      <div class="cat-group">
+        <span class="cat-group-label">성단 자세히</span>
+        <button class="chip" data-cat="globular" onclick="selectCategory('globular')">🔵 구상성단 <span class="cnt" id="cnt-globular"></span></button>
+        <button class="chip" data-cat="open" onclick="selectCategory('open')">⭐ 산개성단 <span class="cnt" id="cnt-open"></span></button>
+      </div>
+
+      <div class="cat-group">
+        <span class="cat-group-label">탐사·기술</span>
+        <button class="chip" data-cat="rocket" onclick="selectCategory('rocket')">🚀 로켓·탐사선 <span class="cnt" id="cnt-rocket"></span></button>
+        <button class="chip" data-cat="telescope" onclick="selectCategory('telescope')">🔭 망원경·관측 <span class="cnt" id="cnt-telescope"></span></button>
+        <button class="chip" data-cat="station" onclick="selectCategory('station')">🛰️ 우주정거장 <span class="cnt" id="cnt-station"></span></button>
+      </div>
+    </div>
+
+    <div class="action-buttons" style="margin-bottom:14px;">
+      <button class="btn btn-random" id="catLoadBtn" onclick="loadCategoryPool(TARGET)">🎲 20장 가져오기</button>
+    </div>
+
+    <div id="catGrid" class="thumb-grid"></div>
+  </div>
+
+  <!-- ============ 즐겨찾기 ============ -->
+  <div class="favorites-section">
+    <div class="section-title">
+      ❤️ 내 즐겨찾기 <span class="badge" id="favCount">0</span>
+    </div>
+    <div id="favoritesGrid" class="gallery-grid">
+      <!-- 채워짐 -->
+    </div>
+    <div id="favoritesEmpty" class="favorites-empty">
+      마음에 드는 사진 위의 ❤️를 눌러 저장해보세요<br>
+      <small style="opacity: 0.6;">(8주차에 배울 localStorage 미리보기!)</small>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  이리고등학교 · 코딩 교육 2026 · 7주차 · 사진 by NASA APOD
+</footer>
+
+<script>
+// ============================================================
+// NASA APOD API
+// DEMO_KEY로 바로 사용 가능! (하루 30번 정도 호출 가능)
+// 더 많이 필요하면: https://api.nasa.gov 에서 무료 키 발급
+// ============================================================
+// 우리 반 전용 NASA API 키 (api.nasa.gov 에서 무료 발급 · 1시간에 4,000번까지)
+// DEMO_KEY는 인터넷(IP) 하나당 1시간 30번뿐이라 교실에서 금방 한도가 차서 이 키를 쓴다.
+const API_KEY = "HcigfcH8RP9KQIyO7w1MGwbhrqLclJkAdagTrvfA";
+
+function getApiKey() {
+  // 위에 적어둔 키를 그대로 쓴다 (키를 바꾸려면 API_KEY 한 줄만 고치면 됨)
+  return API_KEY;
+}
+
+// 응답을 확인해서, 한도 초과(429)면 무엇을 해야 하는지 알려준다
+async function callApod(params) {
+  const res = await fetch(`${BASE}?api_key=${getApiKey()}&${params}`);
+  if (res.status === 429) {
+    throw new Error("RATE_LIMIT");
+  }
+  if (!res.ok) throw new Error(`서버 응답 오류 (${res.status})`);
+  return await res.json();
+}
+const BASE = "https://api.nasa.gov/planetary/apod";
+
+let currentDate = todayString();
+let currentPhoto = null;
+
+// ============================================================
+// 유틸리티
+// ============================================================
+function todayString() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function daysBetween(dateStr, offset) {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + offset);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// ============================================================
+// 🔍 사진 하나 가져오기 (fetch!)
+// ============================================================
+async function fetchPhoto(date) {
+  return await callApod(`date=${date}`);
+}
+
+// 여러 날짜 한번에 가져오기 (start_date/end_date)
+async function fetchRange(startDate, endDate) {
+  return await callApod(`start_date=${startDate}&end_date=${endDate}`);
+}
+
+// 랜덤 여러 장 (count 파라미터)
+async function fetchRandomBatch(count) {
+  return await callApod(`count=${count}`);
+}
+
+// ============================================================
+// 🎬 화면에 표시
+// ============================================================
+async function loadDate(date) {
+  currentDate = date;
+  document.getElementById("dateInput").value = date;
+  document.getElementById("mainPhoto").innerHTML =
+    `<div class="loading"><div class="spinner"></div><div style="margin-top:16px;">우주에서 사진 가져오는 중...</div></div>`;
+
+  try {
+    const photo = await fetchPhoto(date);
+    currentPhoto = photo;
+    renderMain(photo);
+  } catch (err) {
+    document.getElementById("mainPhoto").innerHTML =
+      renderError(err);
+  }
+}
+
+function renderMain(photo) {
+  const isVideo = photo.media_type === "video";
+  const isFav = isFavorite(photo.date);
+
+  // 즐겨찾기 감상 모드면 좌우 꺽쇠와 위치 표시를 붙인다
+  syncFavIndex(photo.date);
+  const favs = getFavorites();
+  const favNav = (favViewIndex >= 0 && favs.length > 1) ? `
+      <button class="nav-arrow prev" onclick="moveFavorite(-1)" title="이전 즐겨찾기">‹</button>
+      <button class="nav-arrow next" onclick="moveFavorite(1)" title="다음 즐겨찾기">›</button>
+      <div class="fav-pos">
+        ❤️ ${favViewIndex + 1} / ${favs.length}
+        <button onclick="exitFavoriteView()" title="감상 모드 끄기">✕</button>
+      </div>` : "";
+
+  document.getElementById("mainPhoto").innerHTML = `
+    <div class="photo-wrap">
+      ${isVideo
+        ? videoCardHtml(photo)
+        : `<img src="${photo.hdurl || photo.url}" alt="${photo.title}">`}
+      <button class="favorite-btn ${isFav ? 'active' : ''}" onclick="toggleFavorite()">
+        ${isFav ? '❤️' : '🤍'}
+      </button>
+      ${favNav}
+    </div>
+    <div class="photo-info">
+      <div class="photo-date">${photo.date}</div>
+      <div class="photo-title">${photo.title}</div>
+      ${photo.copyright ? `<div class="photo-copyright">📸 ${photo.copyright}</div>` : ''}
+      <div class="desc-head">
+        <span class="desc-label" id="descLabel">📖 설명 (한글 번역)</span>
+        <button class="btn-trans" id="descToggle" onclick="toggleDesc()">🇺🇸 영어 원문 보기</button>
+      </div>
+      <div class="photo-desc" id="photoDesc">번역하는 중...</div>
+      <div class="desc-note" id="descNote"></div>
+    </div>
+  `;
+
+  // 설명을 한글로 번역해서 채운다 (원문은 토글로 볼 수 있음)
+  showTranslatedDesc(photo);
+}
+
+// 에러 화면 — 한도 초과일 때는 해결 방법까지 알려준다
+function renderError(err) {
+  const isLimit = err && err.message === "RATE_LIMIT";
+  document.getElementById("mainPhoto").innerHTML = isLimit
+    ? `<div class="error">
+         <div style="font-size:48px;">⏳</div>
+         <div style="margin-top:16px;">오늘 쓸 수 있는 횟수를 다 썼어요</div>
+         <div style="margin-top:10px; font-size:13px; line-height:1.8; opacity:0.85;">
+           우리 반 키는 <b>1시간에 4,000번</b>까지 쓸 수 있는데 그걸 다 썼어요.<br>
+           1시간쯤 뒤에 다시 되고, 급하면 새 키를 받아 아래 칸에 넣으면 돼요.
+         </div>
+         <div style="margin-top:14px;">
+           <a href="https://api.nasa.gov" target="_blank" style="color:var(--teal); font-size:13px;">
+             👉 api.nasa.gov 에서 무료 키 받기 (이메일만 입력)
+           </a>
+         </div>
+       </div>`
+    : `<div class="error">
+         <div style="font-size:48px;">⚠️</div>
+         <div style="margin-top:16px;">사진을 가져올 수 없어요</div>
+         <div style="margin-top:8px; font-size:12px; opacity:0.6;">${err.message}</div>
+       </div>`;
+}
+
+// ============================================================
+// 🏠 처음 화면으로 (제목을 누르면 실행)
+//   오늘 사진을 다시 불러오고 맨 위로 올라간다
+// ============================================================
+function goHome() {
+  loadToday();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// ============================================================
+// 🎬 영상인 날 (APOD는 가끔 사진 대신 영상을 올린다)
+//   파일로 연 페이지에서는 유튜브가 화면 안 재생을 막아서(오류 153),
+//   미리보기 그림을 보여주고 누르면 유튜브에서 열리게 한다.
+// ============================================================
+function youtubeId(url) {
+  const m = /(?:youtube\.com\/(?:embed\/|watch\?v=)|youtu\.be\/)([A-Za-z0-9_-]{6,})/.exec(url || "");
+  return m ? m[1] : "";
+}
+
+function videoCardHtml(photo) {
+  const url = photo.url || "";
+
+  // ① NASA가 직접 올린 영상 파일(mp4 등)이면 화면에서 바로 재생할 수 있다
+  if (/\.(mp4|webm|ogv)(\?|$)/i.test(url)) {
+    return `<video class="apod-video" controls playsinline poster="${photo.thumbnail_url || ""}">
+        <source src="${url}">
+        영상을 재생할 수 없어요. <a href="${url}" target="_blank">새 창에서 열기</a>
+      </video>`;
+  }
+
+  // ② 유튜브 영상이면 미리보기 그림 + 클릭하면 유튜브로
+  const id = youtubeId(url);
+  const link = id ? "https://www.youtube.com/watch?v=" + id : url;
+
+  if (!id) {
+    // 유튜브가 아닌 영상(비메오 등)
+    return `<div class="video-fallback">
+        <div style="font-size:52px;">🎬</div>
+        <div style="margin-top:14px;">오늘은 사진 대신 영상이에요</div>
+        <div style="margin-top:14px;">
+          <a href="${link}" target="_blank" style="color:var(--teal);font-weight:bold;">▶ 새 창에서 영상 보기</a>
+        </div>
+      </div>`;
+  }
+
+  return `<div class="video-card" onclick="window.open('${link}','_blank')" title="유튜브에서 보기">
+      <img src="https://img.youtube.com/vi/${id}/hqdefault.jpg" alt="${photo.title}">
+      <div class="play">▶</div>
+      <div class="video-note">🎬 오늘은 영상이에요 · 클릭하면 유튜브에서 열려요</div>
+    </div>`;
+}
+
+// ============================================================
+// 🎯 컨트롤 액션
+// ============================================================
+function loadToday() {
+  loadDate(todayString());
+}
+
+function navigate(offset) {
+  loadDate(daysBetween(currentDate, offset));
+}
+
+function loadBirthday() {
+  const saved = localStorage.getItem("myBirthday");
+  let birthday = saved || prompt("생일을 입력해주세요 (예: 2010-05-16)", "2010-05-16");
+  if (!birthday) return;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(birthday)) {
+    alert("YYYY-MM-DD 형식으로 입력해주세요!");
+    return;
+  }
+  // APOD는 1995-06-16부터
+  if (birthday < "1995-06-16") {
+    alert("APOD는 1995년 6월 16일부터 시작됐어요!");
+    return;
+  }
+  localStorage.setItem("myBirthday", birthday);
+  loadDate(birthday);
+}
+
+async function loadRandom() {
+  document.getElementById("mainPhoto").innerHTML =
+    `<div class="loading"><div class="spinner"></div><div style="margin-top:16px;">랜덤 우주 여행 중...</div></div>`;
+  try {
+    const [photo] = await fetchRandomBatch(1);
+    currentDate = photo.date;
+    document.getElementById("dateInput").value = photo.date;
+    currentPhoto = photo;
+    renderMain(photo);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function loadWeekGallery() {
+  const section = document.getElementById("gallerySection");
+  const grid = document.getElementById("galleryGrid");
+  section.style.display = "block";
+  section.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  grid.innerHTML = '<div class="loading" style="grid-column:1/-1;"><div class="spinner"></div></div>';
+
+  try {
+    const end = todayString();
+    const start = daysBetween(end, -6);
+    const photos = await fetchRange(start, end);
+
+    grid.innerHTML = photos.reverse().map(p => galleryCardHtml(p)).join("");
+    document.getElementById("galleryCount").textContent = photos.length;
+  } catch (err) {
+    grid.innerHTML = `<div class="error" style="grid-column:1/-1;">갤러리를 불러올 수 없어요</div>`;
+  }
+}
+
+// 날짜 선택기 변경
+document.getElementById("dateInput").addEventListener("change", (e) => {
+  loadDate(e.target.value);
+});
+
+// ============================================================
+// ⬅️➡️ 즐겨찾기 감상 모드
+//   즐겨찾기 사진을 눌러서 크게 볼 때, 좌우 꺽쇠로 다음/이전 사진으로 넘어간다
+// ============================================================
+let favViewIndex = -1;    // -1 이면 감상 모드가 아님
+
+// 즐겨찾기 목록에서 사진을 열 때 호출
+function openFavorite(date) {
+  const favs = getFavorites();
+  favViewIndex = favs.findIndex(f => f.date === date);
+  loadDate(date);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// 꺽쇠로 이동 (offset: -1 이전, +1 다음)
+function moveFavorite(offset) {
+  const favs = getFavorites();
+  if (favs.length === 0) return;
+  favViewIndex = (favViewIndex + offset + favs.length) % favs.length;   // 끝에서 처음으로 이어진다
+  loadDate(favs[favViewIndex].date);
+}
+
+function exitFavoriteView() {
+  favViewIndex = -1;
+  if (currentPhoto) renderMain(currentPhoto);
+}
+
+// 지금 보는 사진이 즐겨찾기 몇 번째인지 다시 맞춘다
+// (감상 중에 즐겨찾기를 빼면 순서가 바뀌므로)
+function syncFavIndex(date) {
+  if (favViewIndex < 0) return;
+  const favs = getFavorites();
+  const i = favs.findIndex(f => f.date === date);
+  favViewIndex = i;                 // 목록에서 빠졌으면 -1 이 되어 감상 모드가 꺼진다
+}
+
+// ============================================================
+// ❤️ 즐겨찾기 (localStorage 미리보기)
+// ============================================================
+function getFavorites() {
+  try {
+    return JSON.parse(localStorage.getItem("nasaFavorites") || "[]");
+  } catch { return []; }
+}
+
+function isFavorite(date) {
+  return getFavorites().some(f => f.date === date);
+}
+
+function toggleFavorite() {
+  if (!currentPhoto) return;
+  toggleFavByDate(currentPhoto.date);
+}
+
+// 화면에 보이는 사진들을 날짜로 찾아 쓰기 위한 목록
+// (하트 버튼이 카드 정보를 직접 들고 있지 않아도 되게 한다)
+const photoIndex = {};
+function rememberPhoto(p) {
+  photoIndex[p.date] = {
+    date: p.date, title: p.title, url: p.url,
+    media_type: p.media_type || "image",
+  };
+}
+
+// 어느 화면에서든 하트를 누르면 이 함수 하나로 처리한다
+function toggleFavByDate(date) {
+  let favs = getFavorites();
+  const idx = favs.findIndex(f => f.date === date);
+  if (idx >= 0) {
+    favs.splice(idx, 1);
+  } else {
+    const p = photoIndex[date] || (currentPhoto && currentPhoto.date === date ? currentPhoto : null);
+    if (!p) return;
+    favs.unshift({ date: p.date, title: p.title, url: p.url, media_type: p.media_type });
+    if (favs.length > 20) favs = favs.slice(0, 20);
+  }
+  localStorage.setItem("nasaFavorites", JSON.stringify(favs));
+
+  if (currentPhoto) renderMain(currentPhoto);
+  renderFavorites();
+  renderCategoryGrid();
+}
+
+// 갤러리 카드 한 장의 HTML (하트 포함) — 여러 곳에서 같이 쓴다
+function galleryCardHtml(p, extraTag, isFavList) {
+  rememberPhoto(p);
+  const fav = isFavorite(p.date);
+  const media = (p.media_type === "image" || !p.media_type)
+    ? `<img src="${p.url}" alt="${p.title}" loading="lazy" decoding="async">`
+    : `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:32px;">🎬</div>`;
+  return `
+    <div class="gallery-item" onclick="${isFavList ? `openFavorite('${p.date}')` : `loadDate('${p.date}'); window.scrollTo({top:0,behavior:'smooth'})`};">
+      ${extraTag || ""}
+      <button class="fav-btn" title="${fav ? '즐겨찾기 빼기' : '즐겨찾기에 담기'}"
+              onclick="event.stopPropagation(); toggleFavByDate('${p.date}');">${fav ? "❤️" : "🤍"}</button>
+      ${media}
+      <div class="gallery-date">${p.date}</div>
+    </div>`;
+}
+
+function renderFavorites() {
+  const favs = getFavorites();
+  const grid = document.getElementById("favoritesGrid");
+  const emptyBox = document.getElementById("favoritesEmpty");
+  document.getElementById("favCount").textContent = favs.length;
+
+  if (favs.length === 0) {
+    grid.innerHTML = "";
+    emptyBox.style.display = "block";
+    return;
+  }
+  emptyBox.style.display = "none";
+  // 즐겨찾기 카드는 '감상 모드'로 연다 (좌우 꺽쇠가 생긴다)
+  grid.innerHTML = favs.map(f => galleryCardHtml(f, "", true)).join("");
+}
+
+
+// ============================================================
+// 🌐 한글 번역 (fetch 두 번째 활용!)
+//   - 구글 번역 무료 엔드포인트를 먼저 쓰고, 실패하면 MyMemory로 재시도
+//   - 한 번 번역한 건 localStorage에 저장해서 두 번 부르지 않는다
+// ============================================================
+const TRANS_CACHE_KEY = "nasaTransCache";
+
+function getTransCache() {
+  try { return JSON.parse(localStorage.getItem(TRANS_CACHE_KEY) || "{}"); }
+  catch { return {}; }
+}
+
+function saveTransCache(key, value) {
+  const cache = getTransCache();
+  cache[key] = value;
+  // 너무 커지지 않게 최근 60개만 유지
+  const keys = Object.keys(cache);
+  if (keys.length > 60) delete cache[keys[0]];
+  localStorage.setItem(TRANS_CACHE_KEY, JSON.stringify(cache));
+}
+
+// 1순위: 구글 번역 (키 불필요, 긴 글도 한 번에)
+async function translateByGoogle(text) {
+  const url = "https://translate.googleapis.com/translate_a/single"
+            + "?client=gtx&sl=en&tl=ko&dt=t&q=" + encodeURIComponent(text);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("google " + res.status);
+  const data = await res.json();
+  // 응답이 [[[번역, 원문, ...], [...]], ...] 모양이라 첫 조각들을 이어붙인다
+  return data[0].map(part => part[0]).join("");
+}
+
+// 2순위: MyMemory (한 번에 500자 제한이라 문장 단위로 잘라서 보냄)
+async function translateByMyMemory(text) {
+  const chunks = [];
+  let buf = "";
+  for (const sentence of text.split(/(?<=[.!?])\s+/)) {
+    if ((buf + sentence).length > 450) { chunks.push(buf); buf = ""; }
+    buf += sentence + " ";
+  }
+  if (buf.trim()) chunks.push(buf);
+
+  const out = [];
+  for (const chunk of chunks) {
+    const url = "https://api.mymemory.translated.net/get?langpair=en|ko&q=" + encodeURIComponent(chunk);
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("mymemory " + res.status);
+    const data = await res.json();
+    out.push(data.responseData.translatedText);
+  }
+  return out.join(" ");
+}
+
+async function translateToKorean(text, cacheKey) {
+  if (!text) return "";
+  const cache = getTransCache();
+  if (cacheKey && cache[cacheKey]) return cache[cacheKey];
+
+  let result = null;
+  try {
+    result = await translateByGoogle(text);
+  } catch (e1) {
+    try {
+      result = await translateByMyMemory(text);
+    } catch (e2) {
+      throw new Error("번역 서비스에 연결하지 못했어요");
+    }
+  }
+  if (cacheKey && result) saveTransCache(cacheKey, result);
+  return result;
+}
+
+// ============================================================
+// 📖 설명 영역: 번역본 ↔ 원문 토글
+// ============================================================
+let descKorean = "";     // 번역된 설명
+let descEnglish = "";    // 원래 영어 설명
+let descShowingKo = true;
+
+async function showTranslatedDesc(photo) {
+  const box = document.getElementById("photoDesc");
+  const note = document.getElementById("descNote");
+  const btn = document.getElementById("descToggle");
+  if (!box) return;
+
+  descEnglish = photo.explanation || "";
+  descKorean = "";
+  descShowingKo = true;
+  box.textContent = "번역하는 중...";
+  note.textContent = "";
+
+  try {
+    descKorean = await translateToKorean(descEnglish, photo.date);
+    // 사용자가 그 사이 다른 날짜로 넘어갔으면 덮어쓰지 않는다
+    if (!currentPhoto || currentPhoto.date !== photo.date) return;
+    box.textContent = descKorean;
+    note.textContent = "자동 번역이라 어색한 부분이 있을 수 있어요. 원문과 비교해보세요!";
+  } catch (err) {
+    if (!currentPhoto || currentPhoto.date !== photo.date) return;
+    descShowingKo = false;
+    box.textContent = descEnglish;
+    document.getElementById("descLabel").textContent = "📖 설명 (영어 원문)";
+    btn.textContent = "🔄 번역 다시 시도";
+    btn.setAttribute("onclick", "retryTranslate()");
+    note.textContent = "⚠️ " + err.message;
+  }
+}
+
+function toggleDesc() {
+  const box = document.getElementById("photoDesc");
+  const label = document.getElementById("descLabel");
+  const btn = document.getElementById("descToggle");
+
+  descShowingKo = !descShowingKo;
+  box.textContent = descShowingKo ? descKorean : descEnglish;
+  label.textContent = descShowingKo ? "📖 설명 (한글 번역)" : "📖 설명 (영어 원문)";
+  btn.textContent = descShowingKo ? "🇺🇸 영어 원문 보기" : "🇰🇷 한글 번역 보기";
+}
+
+function retryTranslate() {
+  const btn = document.getElementById("descToggle");
+  btn.textContent = "🇺🇸 영어 원문 보기";
+  btn.setAttribute("onclick", "toggleDesc()");
+  document.getElementById("descLabel").textContent = "📖 설명 (한글 번역)";
+  if (currentPhoto) showTranslatedDesc(currentPhoto);
+}
+
+// ============================================================
+// 🔭 천체 분류 체계
+//   APOD에는 "이 사진은 무엇이다" 하는 분류 정보가 없다.
+//   그래서 제목·설명에 나오는 낱말로 우리가 직접 분류한다.
+//
+//   구조는 천문학에서 쓰는 방식을 따라 3단계로 나눴다.
+//     지구·하늘 ─ 오로라 / 대기현상 / 별하늘 풍경
+//     태양계   ─ 태양 / 달 / 행성 / 혜성·유성 / 일식·월식
+//     딥스카이 ─ 은하(나선은하·은하단) / 성운(발광·행성상·초신성잔해·암흑)
+//                / 성단(구상·산개) / 별 / 블랙홀·퀘이사
+//     탐사·기술 ─ 로켓·탐사선 / 망원경 / 우주정거장
+// ============================================================
+
+// 각 분류의 이름과, 한 단계 위 분류(parent)
+const TAXONOMY = {
+  // ── 지구·하늘 ──
+  aurora:    { label: "🌈 오로라",        parent: "earth" },
+  atmos:     { label: "🌦️ 대기현상",      parent: "earth" },
+  nightscape:{ label: "🏔️ 별하늘 풍경",   parent: "earth" },
+
+  // ── 태양계 ──
+  sun:       { label: "☀️ 태양",          parent: "solar" },
+  moon:      { label: "🌙 달",            parent: "solar" },
+  planet:    { label: "🪐 행성",          parent: "solar" },
+  comet:     { label: "☄️ 혜성·유성",     parent: "solar" },
+  eclipse:   { label: "🌗 일식·월식",     parent: "solar" },
+
+  // ── 딥스카이: 은하 ──
+  spiral:    { label: "🌀 나선은하",      parent: "galaxy" },
+  galcluster:{ label: "🕸️ 은하단",        parent: "galaxy" },
+  galaxyEtc: { label: "🌌 그 밖의 은하",  parent: "galaxy" },
+
+  // ── 딥스카이: 성운 ──
+  emission:  { label: "🔴 발광성운",      parent: "nebula" },
+  planetary: { label: "💍 행성상성운",    parent: "nebula" },
+  snr:       { label: "💥 초신성 잔해",   parent: "nebula" },
+  darkneb:   { label: "⚫ 암흑성운",      parent: "nebula" },
+
+  // ── 딥스카이: 성단 ──
+  globular:  { label: "🔵 구상성단",      parent: "cluster" },
+  open:      { label: "⭐ 산개성단",      parent: "cluster" },
+
+  // ── 딥스카이: 그 밖 ──
+  star:      { label: "💫 별·항성",       parent: "deep" },
+  blackhole: { label: "🕳️ 블랙홀·퀘이사", parent: "deep" },
+
+  // ── 탐사·기술 ──
+  rocket:    { label: "🚀 로켓·탐사선",   parent: "tech" },
+  telescope: { label: "🔭 망원경·관측",   parent: "tech" },
+  station:   { label: "🛰️ 우주정거장",    parent: "tech" },
+
+  // 어디에도 안 걸린 사진
+  other:     { label: "❔ 그 밖",         parent: null },
+};
+
+// 묶음(중간 단계) 이름
+const GROUP_LABELS = {
+  all:     "🌌 모두",
+  earth:   "🌍 지구·하늘",
+  solar:   "☀️ 태양계",
+  deep:    "✨ 딥스카이",
+  tech:    "🚀 탐사·기술",
+  galaxy:  "🌀 은하",
+  nebula:  "☁️ 성운",
+  cluster: "✨ 성단",
+};
+
+// 묶음이 어디에 속하는지 (딥스카이 > 은하 > 나선은하 …)
+const GROUP_PARENT = { galaxy: "deep", nebula: "deep", cluster: "deep" };
+
+// ============================================================
+// 분류를 판단할 낱말들 (APOD 글이 영어라 영어 낱말로 찾는다)
+//   앞쪽 분류일수록 더 구체적 → 점수가 같으면 구체적인 쪽이 이긴다
+// ============================================================
+const CLASS_WORDS = {
+  // 태양계 (구체적인 이름이 많아 먼저 본다)
+  eclipse:   ["eclipse", "totality", "annular", "occultation", "transit of"],
+  moon:      ["moon", "lunar", "crescent", "moonrise", "moonset", "supermoon", "apollo landing site"],
+  sun:       ["sun ", "solar ", "sunspot", "prominence", "chromosphere", "solar flare",
+              "coronal", "solar corona", "photosphere", "sunrise on"],
+  planet:    ["mars", "venus", "jupiter", "saturn", "mercury", "uranus", "neptune", "pluto",
+              "planet ", "rover", "curiosity", "perseverance", "io ", "europa", "titan",
+              "enceladus", "martian", "jovian", "rings of"],
+  comet:     ["comet", "meteor", "meteor shower", "perseid", "geminid", "leonid",
+              "asteroid", "fireball", "bolide", "zodiacal"],
+
+  // 딥스카이 — 성운
+  planetary: ["planetary nebula", "ring nebula", "helix nebula", "dumbbell", "cat's eye"],
+  snr:       ["supernova", "remnant", "crab nebula", "veil nebula", "cassiopeia a", "sn 1987"],
+  darkneb:   ["dark nebula", "molecular cloud", "dust cloud", "globule", "coalsack", "horsehead"],
+  emission:  ["emission nebula", "h ii", "star-forming", "star forming", "stellar nursery",
+              "pillars", "orion nebula", "lagoon nebula", "eagle nebula", "carina nebula",
+              "nebula", "nebulae"],
+
+  // 딥스카이 — 성단
+  globular:  ["globular cluster", "globular", "omega centauri", "m13", "47 tucanae"],
+  open:      ["open cluster", "star cluster", "pleiades", "hyades", "double cluster", "beehive"],
+
+  // 딥스카이 — 은하
+  galcluster:["galaxy cluster", "cluster of galaxies", "abell ", "galaxy group", "gravitational lens"],
+  spiral:    ["spiral galaxy", "spiral", "barred spiral", "andromeda galaxy", "whirlpool",
+              "pinwheel", "sombrero"],
+  galaxyEtc: ["galaxy", "galaxies", "elliptical", "irregular galaxy", "magellanic",
+              "andromeda", "interacting"],
+
+  // 딥스카이 — 그 밖
+  blackhole: ["black hole", "quasar", "event horizon", "active galactic", "blazar", "accretion disk"],
+  star:      ["star ", "stellar", "binary star", "variable star", "red giant", "white dwarf",
+              "protostar", "betelgeuse", "sirius", "constellation", "star field", "starfield"],
+
+  // 탐사·기술
+  station:   ["space station", "iss ", "astronaut", "spacewalk", "cosmonaut", "tiangong"],
+  telescope: ["telescope", "hubble", "webb", "jwst", "observatory", "radio dish", "vlt ", "alma "],
+  rocket:    ["rocket", "launch", "spacecraft", "probe", "artemis", "spacex", "falcon",
+              "lander", "booster", "liftoff", "mission to"],
+
+  // 지구·하늘
+  aurora:    ["aurora", "borealis", "australis", "northern lights", "southern lights"],
+  atmos:     ["rainbow", "halo", "lightning", "noctilucent", "airglow", "sprite", "green flash",
+              "thunderstorm", "cloudscape", "fog", "atmospheric"],
+  nightscape:["milky way", "landscape", "mountain", "desert", "lake", "coast", "horizon",
+              "panorama", "silhouette", "tree", "sea ", "island", "volcano", "night sky over"],
+};
+
+// ============================================================
+// 사진 하나를 분류한다 (가장 점수가 높은 분류를 고른다)
+// ============================================================
+function classifyPhoto(photo) {
+  const text = ((photo.title || "") + " " + (photo.explanation || "")).toLowerCase();
+  const title = (photo.title || "").toLowerCase();
+
+  let best = "other";
+  let bestScore = 0;
+
+  for (const key of Object.keys(CLASS_WORDS)) {
+    let score = 0;
+    for (const w of CLASS_WORDS[key]) {
+      if (text.includes(w)) score += 1;
+      if (title.includes(w)) score += 3;   // 제목에 나오면 훨씬 중요하게 본다
+    }
+    if (score > bestScore) { bestScore = score; best = key; }
+  }
+  return best;
+}
+
+// 어떤 분류(cat)에 이 사진(leaf)이 속하는지 — 위 단계까지 거슬러 올라가며 확인
+function matchesCategory(cat, leaf) {
+  if (cat === "all") return true;
+  if (!leaf) return false;
+  if (cat === leaf) return true;
+
+  // leaf → 부모 → 그 부모 … 로 올라가며 cat과 같은지 본다
+  let node = TAXONOMY[leaf] ? TAXONOMY[leaf].parent : null;
+  while (node) {
+    if (node === cat) return true;
+    node = GROUP_PARENT[node] || null;
+  }
+  return false;
+}
+
+// 카드에 붙일 이름
+const CATEGORY_LABELS = new Proxy({}, {
+  get: (_, key) => (TAXONOMY[key] ? TAXONOMY[key].label : (GROUP_LABELS[key] || "❔")),
+});
+
+// ============================================================
+// 🖼️ 카테고리 갤러리
+//   APOD API에는 '이 종류만 주세요' 같은 기능이 없다.
+//   그래서 랜덤으로 사진을 계속 받아보면서, 우리가 만든 분류(classifyPhoto)로
+//   골라내 TARGET장을 채운다. 흔한 종류는 금방 차고, 드문 종류는 오래 걸린다.
+// ============================================================
+const CAT_POOL_KEY = "nasaCatPool";
+const TARGET = 20;         // 한 번에 모을 사진 수 (이 숫자만 바꾸면 전부 따라 바뀐다)
+const BATCH = 40;          // 한 묶음에 받아오는 사진 수
+const PARALLEL = 4;        // 한 번에 동시에 요청할 묶음 수 (Promise.all — 훨씬 빠르다!)
+const MAX_TRIES = 6;       // 최대 시도 횟수 (6 × 4묶음 × 40장 = 최대 960장까지 훑는다)
+
+let catPool = loadPoolFromStorage();   // 지금 보여주고 있는 사진들
+let currentCategory = "all";
+let isLoadingPool = false;             // 찾는 중에 또 누르는 것 방지
+
+// 사진을 찾는 동안에는 버튼·카테고리 칩을 눌러도 반응하지 않게 잠근다
+// (여러 번 누르면 요청이 겹쳐서 엉뚱한 결과가 나올 수 있다)
+function lockCategoryControls(locked) {
+  const btn = document.getElementById("catLoadBtn");
+  if (btn) {
+    btn.disabled = locked;
+    btn.textContent = locked ? "⏳ 찾는 중..." : `🎲 ${TARGET}장 가져오기`;
+  }
+  document.querySelectorAll(".chip").forEach(c => { c.disabled = locked; });
+}
+
+function loadPoolFromStorage() {
+  try { return JSON.parse(localStorage.getItem(CAT_POOL_KEY) || "[]"); }
+  catch { return []; }
+}
+
+function savePoolToStorage() {
+  try { localStorage.setItem(CAT_POOL_KEY, JSON.stringify(catPool)); } catch {}
+}
+
+// 카테고리를 고르면 그 종류 사진으로 새로 채운다
+function selectCategory(cat) {
+  if (isLoadingPool) return;
+  currentCategory = cat;
+  document.querySelectorAll(".chip").forEach(c => {
+    c.classList.toggle("active", c.dataset.cat === cat);
+  });
+  loadCategoryPool(TARGET);
+}
+
+/**
+ * 지금 고른 카테고리에 맞는 사진을 target장 모은다.
+ * 기존 사진은 지우고, 서로 겹치지 않는 새 사진으로 채운다.
+ */
+async function loadCategoryPool(target) {
+  if (isLoadingPool) return;
+  isLoadingPool = true;
+  lockCategoryControls(true);
+
+  const cat = currentCategory;
+  const label = GROUP_LABELS[cat] || CATEGORY_LABELS[cat] || "";
+  const grid = document.getElementById("catGrid");
+
+  const seen = new Set(catPool.map(p => p.date));   // 직전에 보여준 사진은 제외
+  const fresh = [];
+  let scanned = 0;
+
+  const showProgress = (tries) => {
+    grid.innerHTML = `
+      <div class="cat-progress">
+        <div class="spinner" style="margin:0 auto 10px;"></div>
+        ${label} 사진을 찾는 중...
+        <span class="big">${fresh.length} / ${target}장</span>
+        <span style="font-size:11px;color:var(--dim);">사진 ${scanned}장 확인 · ${tries}번째 시도<br>드문 종류는 조금 오래 걸려요</span>
+      </div>`;
+  };
+  showProgress(1);
+
+  try {
+    let emptyRounds = 0;   // 새로 건진 게 하나도 없었던 횟수
+    for (let t = 1; t <= MAX_TRIES && fresh.length < target; t++) {
+      const before = fresh.length;
+
+      // 🚀 묶음 여러 개를 동시에 요청 (하나씩 기다리면 몇 배 더 오래 걸린다)
+      const results = await Promise.all(
+        Array.from({ length: PARALLEL }, () => fetchRandomBatch(BATCH))
+      );
+      if (!results.every(Array.isArray)) throw new Error("rate");   // 한도 초과면 에러 객체가 온다
+      const photos = results.flat();
+
+      for (const p of photos) {
+        if (fresh.length >= target) break;
+        if (p.media_type !== "image") continue;   // 영상은 제외
+        if (seen.has(p.date)) continue;           // 이미 본 사진(중복) 제외
+        seen.add(p.date);
+        scanned++;
+
+        const c = classifyPhoto(p);
+        if (!matchesCategory(cat, c)) continue;   // 고른 종류가 아니면 버린다
+        fresh.push({ date: p.date, title: p.title, url: p.url, _cat: c });
+      }
+      showProgress(t);
+
+      // 세 번 연속 한 장도 못 건지면 그만 찾는다 (그만큼 드문 종류)
+      emptyRounds = (fresh.length === before) ? emptyRounds + 1 : 0;
+      if (emptyRounds >= 3) break;
+    }
+
+    catPool = fresh;          // 기존 사진은 버리고 새로 찾은 사진으로 교체
+    lastScanned = scanned;
+    savePoolToStorage();
+    renderCategoryGrid();
+  } catch (err) {
+    grid.innerHTML = `<div class="cat-empty">
+        😢 사진을 가져오지 못했어요<br>
+        <span style="font-size:12px;">잠시 뒤에 다시 눌러보세요.<br>
+        (우리 반 키는 1시간에 4,000번까지 쓸 수 있어요)</span>
+      </div>`;
+  } finally {
+    isLoadingPool = false;
+    lockCategoryControls(false);
+  }
+}
+
+let lastScanned = 0;   // 마지막으로 훑어본 사진 수 (안내 문구용)
+
+function renderCategoryGrid() {
+  const grid = document.getElementById("catGrid");
+
+  // 개수는 지금 고른 카테고리에만 표시한다 (지금 목록이 그 종류로만 채워져 있으므로)
+  ["all", ...Object.keys(GROUP_LABELS), ...Object.keys(TAXONOMY)].forEach(c => {
+    const el = document.getElementById("cnt-" + c);
+    if (el) el.textContent = (c === currentCategory) ? catPool.length : "";
+  });
+  document.getElementById("catPoolCount").textContent = catPool.length;
+
+  if (catPool.length === 0) {
+    grid.innerHTML = `<div class="cat-empty">아직 모은 사진이 없어요<br>위에서 보고 싶은 종류를 누르거나 [🎲 ${TARGET}장 가져오기]를 눌러보세요!</div>`;
+    return;
+  }
+
+  const short = catPool.length < TARGET && lastScanned > 0
+    ? `<div class="cat-empty" style="grid-column:1/-1;padding:14px;">
+         사진 ${lastScanned}장을 훑어서 ${catPool.length}장을 찾았어요.
+         이 종류는 드물어요 — [🎲 ${TARGET}장 가져오기]를 다시 누르면 더 찾아봐요!
+       </div>`
+    : "";
+
+  grid.innerHTML = catPool.map(p =>
+    galleryCardHtml(p, `<span class="cat-tag">${CATEGORY_LABELS[p._cat]}</span>`)
+  ).join("") + short;
+}
+
+// 감상 모드에서는 키보드 ← → 로도 넘길 수 있다
+document.addEventListener("keydown", (e) => {
+  if (favViewIndex < 0) return;
+  if (e.key === "ArrowLeft")  moveFavorite(-1);
+  if (e.key === "ArrowRight") moveFavorite(1);
+  if (e.key === "Escape")     exitFavoriteView();
+});
+
+// ============================================================
+// 시작!
+// ============================================================
+document.getElementById("dateInput").value = currentDate;
+loadToday();
+renderFavorites();
+renderCategoryGrid();   // 저장해둔 카테고리 사진이 있으면 바로 보여준다
+</script>
+
+</body>
+</html>

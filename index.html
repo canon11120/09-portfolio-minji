@@ -1,0 +1,5290 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이리고등학교 코딩교육 · 7주차 실습</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0F1230;
+    --card: #1B1F44;
+    --card-hi: #262B58;
+    --text: #FFFFFF;
+    --off: #E8EAF6;
+    --muted: #A8AED1;
+    --dim: #6A6F95;
+    --purple-lt: #9F90FF;
+    --teal: #5EEAD4;
+    --yellow: #F5D547;
+    --pink: #FF6B9D;
+  }
+
+  html, body { height: 100%; }
+  body {
+    font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ================= 상단 탭 바 ================= */
+  .bar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 14px;
+    background: #141838;
+    border-bottom: 1px solid var(--card-hi);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .bar::-webkit-scrollbar { display: none; }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: 0;
+    color: var(--off);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 13px 14px 13px 2px;
+    margin-right: 8px;
+    border-right: 1px solid var(--card-hi);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .brand:hover { color: #fff; }
+  .brand .dot { font-size: 17px; }
+
+  .tab {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: none;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: bold;
+    padding: 14px 13px 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: color .15s, background .15s;
+  }
+  .tab:hover { color: var(--off); background: rgba(255,255,255,.05); }
+  .tab.on { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-icon { font-size: 15px; }
+
+  .spacer { flex: 1; }
+
+  .reload {
+    flex-shrink: 0;
+    visibility: hidden;
+    background: none;
+    border: 1px solid var(--card-hi);
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 12.5px;
+    border-radius: 8px;
+    padding: 6px 11px;
+    cursor: pointer;
+  }
+  .reload:hover { color: var(--off); border-color: var(--dim); }
+  .reload.show { visibility: visible; }
+
+  /* ================= 본문 ================= */
+  .stage { flex: 1; position: relative; overflow: hidden; }
+
+  .view { position: absolute; inset: 0; display: none; }
+  .view.on { display: block; }
+
+  .view iframe { width: 100%; height: 100%; border: 0; display: block; }
+
+  .booting {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--dim);
+    font-size: 14px;
+  }
+
+  /* ---- 홈 화면 ---- */
+  #view-home {
+    overflow-y: auto;
+    background:
+      radial-gradient(ellipse at 15% -10%, rgba(124,106,255,0.28), transparent 55%),
+      radial-gradient(ellipse at 85% 110%, rgba(94,234,212,0.18), transparent 55%),
+      var(--bg);
+  }
+  .stars {
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 15% 25%, rgba(255,255,255,.7), transparent),
+      radial-gradient(1px 1px at 70% 60%, rgba(255,255,255,.6), transparent),
+      radial-gradient(2px 2px at 40% 15%, rgba(255,255,255,.5), transparent),
+      radial-gradient(1px 1px at 85% 35%, rgba(255,255,255,.6), transparent),
+      radial-gradient(1px 1px at 25% 80%, rgba(255,255,255,.5), transparent);
+    background-size: 320px 320px;
+    opacity: .35;
+    pointer-events: none;
+  }
+  .home-inner {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 40px 20px 56px;
+    position: relative;
+    z-index: 1;
+  }
+
+  header { text-align: center; margin-bottom: 44px; }
+  .eyebrow {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: .12em;
+    color: var(--teal);
+    border: 1px solid rgba(94,234,212,.35);
+    border-radius: 999px;
+    padding: 6px 16px;
+    margin-bottom: 18px;
+  }
+  h1 {
+    font-size: 38px;
+    line-height: 1.25;
+    background: linear-gradient(95deg, var(--teal), var(--purple-lt) 55%, var(--pink));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+  }
+  header p { color: var(--muted); font-size: 15px; line-height: 1.7; }
+  header p b { color: var(--off); }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    gap: 20px;
+  }
+
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    background: var(--card);
+    border: 1px solid var(--card-hi);
+    border-radius: 18px;
+    padding: 26px 24px 22px;
+    color: inherit;
+    font-family: inherit;
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--accent);
+  }
+  .card:hover {
+    transform: translateY(-6px);
+    border-color: var(--accent);
+    box-shadow: 0 14px 34px rgba(0,0,0,.45);
+  }
+  .card .icon { font-size: 42px; line-height: 1; margin-bottom: 14px; }
+  .card h2 { font-size: 20px; margin-bottom: 8px; }
+  .card .desc { color: var(--muted); font-size: 13.5px; line-height: 1.75; flex: 1; }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 16px 0 18px; }
+  .tag {
+    font-size: 11px;
+    font-weight: bold;
+    color: var(--accent);
+    background: rgba(255,255,255,.06);
+    border-radius: 999px;
+    padding: 4px 10px;
+  }
+
+  .go {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13.5px;
+    font-weight: bold;
+    color: var(--accent);
+  }
+  .go .arrow { transition: transform .18s ease; }
+  .card:hover .go .arrow { transform: translateX(5px); }
+
+  .note {
+    margin-top: 34px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid var(--card-hi);
+    border-radius: 14px;
+    padding: 18px 22px;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.85;
+  }
+  .note b { color: var(--off); }
+  .note ul { margin: 8px 0 0 18px; }
+
+  footer {
+    text-align: center;
+    color: var(--dim);
+    font-size: 12.5px;
+    margin-top: 34px;
+    line-height: 1.8;
+  }
+
+  @media (max-width: 640px) {
+    .home-inner { padding: 26px 14px 40px; }
+    h1 { font-size: 28px; }
+    .card { padding: 22px 20px 18px; }
+    .tab-label { display: none; }
+    .brand .txt { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== 상단 탭 ===================== -->
+<nav class="bar">
+  <button class="brand" data-tab="home"><span class="dot">🏫</span><span class="txt">7주차 실습</span></button>
+
+  <button class="tab" data-tab="movie" style="--accent: var(--yellow);">
+    <span class="tab-icon">🎬</span><span class="tab-label">영화 취향 저격기</span>
+  </button>
+
+  <button class="tab" data-tab="nasa" style="--accent: var(--teal);">
+    <span class="tab-icon">🌌</span><span class="tab-label">우주 사진 갤러리</span>
+  </button>
+
+  <button class="tab" data-tab="animal" style="--accent: var(--pink);">
+    <span class="tab-icon">🦉</span><span class="tab-label">명탐정 부엉즈</span>
+  </button>
+  <div class="spacer"></div>
+  <button class="reload" id="reloadBtn">↻ 다시 시작</button>
+</nav>
+
+<!-- ===================== 본문 ===================== -->
+<div class="stage">
+
+  <div class="view on" id="view-home">
+    <div class="stars"></div>
+    <div class="home-inner">
+
+      <header>
+        <div class="eyebrow">이리고등학교 · 코딩교육 · 7주차</div>
+        <h1>인터넷에서 진짜 데이터 가져오기</h1>
+        <p>
+          <b>fetch</b> 한 줄이면 전 세계의 데이터가 내 화면으로 들어옵니다.<br>
+          아래 세 가지를 직접 눌러보며 API가 무엇인지 느껴보세요.
+        </p>
+      </header>
+
+      <div class="cards">
+
+        <button class="card" data-tab="movie" style="--accent: var(--yellow);">
+          <div class="icon">🎬</div>
+          <h2>영화 취향 저격기</h2>
+          <div class="desc">장르·연도·평점을 골라 내 취향의 영화를 찾습니다. 배우 이름으로 검색해 필모그래피를 보고, 아래로 내리면 다음 목록이 자동으로 불러와집니다.</div>
+          <div class="tags"><span class="tag">TMDB</span><span class="tag">검색·필터</span><span class="tag">무한 스크롤</span><span class="tag">Promise.all</span></div>
+          <div class="go"><span>영화 찾으러 가기</span><span class="arrow">→</span></div>
+        </button>
+
+        <button class="card" data-tab="nasa" style="--accent: var(--teal);">
+          <div class="icon">🌌</div>
+          <h2>우주 사진 갤러리</h2>
+          <div class="desc">NASA가 매일 올리는 오늘의 우주 사진을 봅니다. 내 생일의 우주는 어땠을까? 영어 설명은 자동으로 한글 번역되고, 은하·성운·행성 같은 종류별로도 찾아볼 수 있어요.</div>
+          <div class="tags"><span class="tag">NASA APOD</span><span class="tag">fetch</span><span class="tag">번역 API</span><span class="tag">localStorage</span></div>
+          <div class="go"><span>사진 보러 가기</span><span class="arrow">→</span></div>
+        </button>
+
+        <button class="card" data-tab="animal" style="--accent: var(--pink);">
+          <div class="icon">🦉</div>
+          <h2>명탐정 부엉즈</h2>
+          <div class="desc">캄캄하게 가려진 사진 속 동물을 맞히는 추리 게임. 질문을 던질수록 사진이 조금씩 벗겨집니다. 적은 질문으로 맞힐수록 높은 점수!</div>
+          <div class="tags"><span class="tag">위키백과 API</span><span class="tag">canvas</span><span class="tag">CSS 애니메이션</span><span class="tag">게임 로직</span></div>
+          <div class="go"><span>추리하러 가기</span><span class="arrow">→</span></div>
+        </button>
+      </div>
+
+      <div class="note">
+        <b>💡 실습 전에 확인하세요</b>
+        <ul>
+          <li>세 가지 모두 <b>인터넷 연결</b>이 필요합니다. 진짜 서버에서 데이터를 받아오기 때문이에요.</li>
+          <li>즐겨찾기·최고점수는 <b>내 브라우저에만</b> 저장됩니다(localStorage). 다른 컴퓨터에서는 보이지 않아요.</li>
+          <li>사진이 안 뜨거나 "가져올 수 없어요"가 보이면 잠시 뒤 다시 시도해 보세요. 무료 API는 잠깐씩 쉬어가기도 합니다.</li>
+          <li>위쪽 탭으로 세 가지를 자유롭게 오갈 수 있고, 하던 내용은 그대로 남아 있습니다.</li>
+        </ul>
+      </div>
+
+      <footer>
+        이리고등학교 코딩교육 &nbsp;|&nbsp; 옴니마인드<br>
+        사진·자료 제공 — NASA APOD · TMDB · 위키백과
+      </footer>
+
+    </div>
+  </div>
+
+  <div class="view" id="view-movie"></div>
+  <div class="view" id="view-nasa"></div>
+  <div class="view" id="view-animal"></div>
+
+</div>
+
+<!-- ============ 각 실습의 원본 HTML (그대로 보관) ============ -->
+<script type="text/plain" id="src-movie"><!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎬 영화 취향 저격기 · TMDB Movie Finder</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #1B1E3A;
+    --bg-deep: #12152E;
+    --card: #242950;
+    --card-hi: #2E3460;
+    --text: #FFFFFF;
+    --off: #E8EAF6;
+    --muted: #A8AED1;
+    --dim: #6A6F95;
+    --purple: #7C6AFF;
+    --purple-lt: #9F90FF;
+    --teal: #5EEAD4;
+    --yellow: #F5D547;
+    --coral: #FF7A7A;
+    --pink: #FF6B9D;
+    --orange: #FFA75E;
+  }
+
+  body {
+    font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+    background: linear-gradient(135deg, var(--bg) 0%, var(--bg-deep) 100%);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  /* ============ 뷰 전환 ============ */
+  .view {
+    animation: fadeIn 0.35s ease-out;
+  }
+  .view.hidden { display: none; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* 더 보기 / 자동 불러오기 */
+  .load-more-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 28px 0 10px;
+  }
+  .load-more-btn {
+    padding: 12px 28px;
+    background: var(--card);
+    border: 1.5px solid var(--purple-lt);
+    border-radius: 30px;
+    color: var(--purple-lt);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+  .load-more-btn:hover { background: var(--purple); border-color: var(--purple); color: #fff; }
+  .load-more-btn:disabled { opacity: 0.6; cursor: default; }
+  .load-more-info { font-size: 12px; color: var(--dim); }
+
+  /* 대표작 정렬 버튼 */
+  .sort-tabs {
+    display: inline-flex;
+    gap: 6px;
+    margin-left: auto;
+  }
+  .sort-tab {
+    padding: 5px 12px;
+    background: var(--card);
+    border: 1px solid var(--card-hi);
+    border-radius: 999px;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+  .sort-tab:hover { color: var(--text); border-color: var(--purple-lt); }
+  .sort-tab.active {
+    background: var(--purple);
+    border-color: var(--purple);
+    color: #fff;
+  }
+
+  /* 상세 화면 위쪽 줄: 왼쪽 뒤로가기 · 오른쪽 홈 */
+  .detail-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  /* 홈 버튼 — 뒤로가기와 같은 모양/높이로 맞춘다 */
+  .home-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    background: var(--card);
+    border: 1px solid var(--purple-lt);
+    color: var(--purple-lt);
+    border-radius: 30px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+  .home-btn:hover {
+    background: var(--purple);
+    border-color: var(--purple);
+    color: #fff;
+    transform: translateY(-2px);
+  }
+
+  header.list-header {
+    text-align: center;
+    padding: 20px 0 30px;
+  }
+  header.list-header h1 {
+    font-size: 36px;
+    background: linear-gradient(90deg, var(--yellow), var(--pink));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+    cursor: pointer;
+  }
+  header.list-header .sub {
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .demo-badge {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 6px 14px;
+    background: rgba(255, 167, 94, 0.15);
+    border: 1px solid var(--orange);
+    color: var(--orange);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+  }
+
+  .layout {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 24px;
+  }
+
+  /* ============ 필터 사이드바 ============ */
+  .sidebar {
+    background: var(--card);
+    border: 1px solid var(--card-hi);
+    border-radius: 16px;
+    padding: 24px;
+    height: fit-content;
+    position: sticky;
+    top: 20px;
+  }
+  .sidebar h3 {
+    color: var(--yellow);
+    font-size: 14px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .search-box {
+    position: relative;
+    margin-bottom: 24px;
+  }
+  .search-box input {
+    width: 100%;
+    padding: 12px 12px 12px 38px;
+    background: var(--bg);
+    border: 1.5px solid var(--purple);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: 0.2s;
+  }
+  .search-box input:focus {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(94, 234, 212, 0.15);
+  }
+  .search-box::before {
+    content: "🔎";
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+  }
+
+  .filter-group { margin-bottom: 20px; }
+  .filter-group label {
+    display: block;
+    color: var(--muted);
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+  .filter-group label b { color: var(--teal); }
+
+  .genre-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    padding: 6px 12px;
+    background: var(--bg);
+    border: 1px solid var(--card-hi);
+    border-radius: 14px;
+    color: var(--muted);
+    font-size: 11px;
+    cursor: pointer;
+    transition: 0.15s;
+    user-select: none;
+  }
+  .chip:hover { border-color: var(--purple-lt); color: var(--off); }
+  .chip.active {
+    background: var(--purple); border-color: var(--purple);
+    color: white; font-weight: bold;
+  }
+
+  input[type="range"] {
+    width: 100%; height: 6px;
+    background: var(--bg); border-radius: 3px;
+    outline: none; -webkit-appearance: none;
+    accent-color: var(--purple);
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    background: var(--purple-lt);
+    border-radius: 50%; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(124, 106, 255, 0.5);
+  }
+
+  select {
+    width: 100%; padding: 8px 12px;
+    background: var(--bg);
+    border: 1px solid var(--card-hi); border-radius: 8px;
+    color: var(--off); font-size: 13px;
+    font-family: inherit; outline: none; cursor: pointer;
+  }
+
+  .btn-reset {
+    width: 100%; padding: 10px;
+    background: transparent;
+    border: 1px solid var(--dim);
+    color: var(--muted); border-radius: 8px;
+    font-size: 12px; cursor: pointer;
+    transition: 0.15s; font-family: inherit;
+  }
+  .btn-reset:hover { border-color: var(--coral); color: var(--coral); }
+
+  /* ============ 결과 그리드 ============ */
+  .results { min-height: 400px; }
+  .results-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 20px; padding: 0 4px;
+  }
+  .results-count { color: var(--muted); font-size: 14px; }
+  .results-count b { color: var(--teal); font-size: 16px; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);   /* 가로 5개 */
+    gap: 16px;
+  }
+
+  .movie {
+    background: var(--card);
+    border: 1px solid var(--card-hi);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: 0.25s;
+    position: relative;
+  }
+  .movie:hover {
+    transform: translateY(-4px);
+    border-color: var(--purple-lt);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  }
+  .poster {
+    width: 100%; aspect-ratio: 2 / 3;
+    background: var(--bg-deep);
+    position: relative; overflow: hidden;
+  }
+  .poster img {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+  }
+  .poster.no-image {
+    background: linear-gradient(135deg,
+      hsl(var(--fallback-hue, 260), 60%, 50%) 0%,
+      hsl(calc(var(--fallback-hue, 260) + 60), 65%, 45%) 100%);
+    display: flex; align-items: center; justify-content: center;
+    color: white; position: relative; overflow: hidden;
+  }
+  .poster.no-image::before {
+    content: "🎬"; position: absolute;
+    font-size: 100px; opacity: 0.2;
+    right: -15px; bottom: -25px;
+    transform: rotate(-15deg);
+  }
+  .poster.no-image::after {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.2), transparent 50%);
+  }
+  .rating-badge {
+    position: absolute; top: 10px; right: 10px;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    color: var(--yellow);
+    padding: 4px 10px; border-radius: 12px;
+    font-size: 12px; font-weight: bold;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .movie-info { padding: 12px; }
+  .movie-title {
+    font-size: 14px; font-weight: bold;
+    color: var(--text); margin-bottom: 4px;
+    overflow: hidden; text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    min-height: 36px;
+  }
+  .movie-meta { color: var(--muted); font-size: 11px; }
+
+  .overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(18, 21, 46, 0.98) 60%, transparent);
+    padding: 16px;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    opacity: 0; transition: opacity 0.25s;
+    pointer-events: none;
+  }
+  .movie:hover .overlay { opacity: 1; }
+  .overview {
+    color: var(--off); font-size: 11px; line-height: 1.5;
+    overflow: hidden;
+    display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical;
+  }
+
+  /* ============ 로딩 / 빈 상태 ============ */
+  .loading, .empty {
+    text-align: center; padding: 80px 20px; color: var(--muted);
+  }
+  .loading .spinner {
+    display: inline-block;
+    width: 40px; height: 40px;
+    border: 3px solid var(--card-hi);
+    border-top-color: var(--purple);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .empty h2 { color: var(--off); font-size: 22px; margin: 16px 0 8px; }
+  .empty p { color: var(--muted); font-size: 14px; }
+  .empty .emoji { font-size: 48px; }
+
+  /* ============ 인물 검색 결과 (목록 뷰) ============ */
+  .person-section {
+    margin-bottom: 28px;
+  }
+  .person-section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    color: var(--pink);
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 14px;
+    white-space: nowrap;
+  }
+  .person-section-title .count {
+    background: var(--pink);
+    color: white;
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-weight: bold;
+  }
+  .person-section-title .hint {
+    font-size: 11px;
+    color: var(--dim);
+    font-weight: normal;
+    white-space: normal;
+  }
+  .person-results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 180px));
+    gap: 12px;
+    justify-content: start;
+  }
+  .person-result-card {
+    background: var(--card);
+    border: 1px solid var(--card-hi);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .person-result-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--pink);
+    box-shadow: 0 12px 26px rgba(255,107,157,0.3);
+  }
+  .person-result-photo {
+    width: 100%;
+    aspect-ratio: 1;
+    background: var(--bg-deep);
+    position: relative;
+    overflow: hidden;
+  }
+  .person-result-photo img { width: 100%; height: 100%; object-fit: cover; }
+  .person-result-photo.no-image {
+    background: linear-gradient(135deg,
+      hsl(var(--fallback-hue, 320), 55%, 45%),
+      hsl(calc(var(--fallback-hue, 320) + 40), 60%, 40%));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 52px;
+    color: rgba(255,255,255,0.5);
+  }
+  .person-result-info { padding: 10px 12px; }
+  .person-result-name {
+    color: var(--text);
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .person-result-known {
+    color: var(--muted);
+    font-size: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .person-result-known::before { content: '🎬 '; }
+
+  /* 섹션 구분자 */
+  .results-section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--teal);
+    font-size: 16px;
+    font-weight: bold;
+    margin: 8px 0 14px;
+  }
+  .results-section-title .count {
+    background: var(--teal);
+    color: var(--bg);
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 12px;
+  }
+
+  /* ============ 상세 뷰 공통 ============ */
+  .detail-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .back-btn {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    background: var(--card);
+    border: 1px solid var(--card-hi);
+    color: var(--off);
+    border-radius: 30px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: 0.2s;
+  }
+  .back-btn:hover {
+    background: var(--purple);
+    border-color: var(--purple);
+    color: white;
+    transform: translateX(-4px);
+  }
+
+  /* ============ 영화 상세: 히어로 (backdrop + 포스터) ============ */
+  .movie-hero {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    background: var(--card);
+    border: 1px solid var(--card-hi);
+    margin-bottom: 32px;
+  }
+  .backdrop {
+    height: 380px;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--bg-deep);
+    background-image: linear-gradient(135deg,
+      hsl(var(--hero-hue, 260), 55%, 30%),
+      hsl(calc(var(--hero-hue, 260) + 60), 60%, 25%));
+    position: relative;
+  }
+  .backdrop::after {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(180deg, transparent 20%, rgba(27, 30, 58, 0.5) 60%, var(--card) 100%),
+      linear-gradient(90deg, rgba(27, 30, 58, 0.7) 0%, transparent 50%);
+  }
+  .backdrop::before {
+    content: '🎬';
+    position: absolute;
+    right: 8%;
+    top: 30%;
+    font-size: 120px;
+    opacity: 0.15;
+    z-index: 1;
+  }
+  .hero-content {
+    position: relative;
+    padding: 30px;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 30px;
+    margin-top: -160px;
+    z-index: 2;
+  }
+  .hero-poster {
+    width: 220px;
+    aspect-ratio: 2/3;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    background: var(--bg-deep);
+    border: 2px solid var(--card-hi);
+    position: relative;
+  }
+  .hero-poster img { width: 100%; height: 100%; object-fit: cover; }
+  .hero-poster.no-image {
+    background: linear-gradient(135deg,
+      hsl(var(--hero-hue, 260), 60%, 45%),
+      hsl(calc(var(--hero-hue, 260) + 60), 65%, 40%));
+    display: flex; align-items: center; justify-content: center;
+  }
+  .hero-poster.no-image::before {
+    content: '🎬';
+    font-size: 90px;
+    opacity: 0.4;
+  }
+  .hero-info { padding-top: 160px; }
+  .hero-info h1 {
+    font-size: 34px;
+    color: var(--text);
+    margin-bottom: 6px;
+    line-height: 1.2;
+  }
+  .hero-original {
+    font-size: 15px;
+    color: var(--muted);
+    font-style: italic;
+    margin-bottom: 16px;
+  }
+  .hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 18px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .hero-meta .item {
+    display: flex; align-items: center; gap: 5px;
+  }
+  .hero-meta .rating {
+    color: var(--yellow);
+    font-weight: bold;
+    font-size: 15px;
+  }
+  .genre-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+  .genre-tag {
+    padding: 4px 12px;
+    background: rgba(124, 106, 255, 0.15);
+    border: 1px solid var(--purple);
+    color: var(--purple-lt);
+    border-radius: 14px;
+    font-size: 11px;
+  }
+  .tagline {
+    color: var(--teal);
+    font-style: italic;
+    font-size: 15px;
+    margin-bottom: 16px;
+  }
+  .overview-full {
+    color: var(--off);
+    font-size: 14px;
+    line-height: 1.75;
+    margin-bottom: 20px;
+  }
+  .directors {
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+  .directors .name {
+    color: var(--pink);
+    cursor: pointer;
+    font-weight: bold;
+  }
+  .directors .name:hover { text-decoration: underline; }
+
+  /* ============ 섹션 헤더 ============ */
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 28px 0 16px;
+    font-size: 20px;
+    color: var(--off);
+  }
+  .section-title .count {
+    background: var(--purple);
+    color: white;
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-weight: bold;
+  }
+
+  /* ============ 캐스트 가로 스크롤 ============ */
+  .cast-row {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    padding-bottom: 12px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--purple) var(--card);
+  }
+  .cast-row::-webkit-scrollbar { height: 8px; }
+  .cast-row::-webkit-scrollbar-track { background: var(--card); border-radius: 4px; }
+  .cast-row::-webkit-scrollbar-thumb { background: var(--purple); border-radius: 4px; }
+
+  .cast-card {
+    flex: 0 0 130px;
+    background: var(--card);
+    border: 1px solid var(--card-hi);
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .cast-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--pink);
+    box-shadow: 0 8px 20px rgba(255, 107, 157, 0.3);
+  }
+  .cast-photo {
+    width: 100%;
+    aspect-ratio: 1;
+    background: var(--bg-deep);
+    position: relative;
+    overflow: hidden;
+  }
+  .cast-photo img { width: 100%; height: 100%; object-fit: cover; }
+  .cast-photo.no-image {
+    background: linear-gradient(135deg,
+      hsl(var(--fallback-hue, 200), 40%, 30%),
+      hsl(calc(var(--fallback-hue, 200) + 40), 45%, 35%));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 44px;
+    color: rgba(255,255,255,0.4);
+  }
+  .cast-info { padding: 10px; }
+  .cast-name {
+    color: var(--text);
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .cast-character {
+    color: var(--pink);
+    font-size: 10.5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .cast-character::before { content: '🎭 '; }
+
+  /* ============ 예고편 ============ */
+  .trailer-wrap {
+    position: relative;
+    padding-top: 56.25%;
+    background: black;
+    border-radius: 12px;
+    overflow: hidden;
+    max-width: 720px;
+  }
+  /* 예고편 미리보기 (클릭하면 유튜브에서 열림) */
+  .trailer-thumb {
+    position: relative;
+    display: block;
+    max-width: 720px;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    background: #000;
+  }
+  .trailer-thumb img { width: 100%; display: block; }
+  .trailer-thumb .play-btn {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 88px; height: 62px;
+    background: rgba(220, 30, 30, 0.92);
+    border-radius: 14px;
+    color: #fff;
+    font-size: 28px;
+    display: flex; align-items: center; justify-content: center;
+    transition: 0.15s;
+  }
+  .trailer-thumb:hover .play-btn { background: #ff0000; transform: translate(-50%,-50%) scale(1.1); }
+  .trailer-note {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    background: rgba(18, 21, 46, 0.85);
+    color: var(--off);
+    font-size: 12px;
+    text-align: center;
+    padding: 8px 12px;
+  }
+
+  .trailer-wrap iframe {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    border: none;
+  }
+
+  /* ============ 비슷한 영화 ============ */
+  .similar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+  }
+  .similar-movie {
+    background: var(--card);
+    border: 1px solid var(--card-hi);
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .similar-movie:hover {
+    transform: scale(1.04);
+    border-color: var(--teal);
+  }
+  .similar-movie .poster { aspect-ratio: 2/3; }
+  .similar-movie .movie-title { font-size: 12px; min-height: 32px; }
+
+  /* ============ 인물 상세 뷰 ============ */
+  .person-container {
+    background: var(--card);
+    border-radius: 20px;
+    border: 1px solid var(--card-hi);
+    padding: 30px;
+    margin-bottom: 30px;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 30px;
+  }
+  .person-photo {
+    width: 220px;
+    aspect-ratio: 2/3;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--bg-deep);
+    border: 2px solid var(--card-hi);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    position: relative;
+  }
+  .person-photo img { width: 100%; height: 100%; object-fit: cover; }
+  .person-photo.no-image {
+    background: linear-gradient(135deg, var(--purple), var(--pink));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .person-photo.no-image::before {
+    content: '👤';
+    font-size: 100px;
+    opacity: 0.6;
+  }
+  .person-info h1 {
+    font-size: 32px;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .person-info h2 {
+    font-size: 14px;
+    color: var(--muted);
+    font-weight: normal;
+    font-style: italic;
+    margin-bottom: 20px;
+  }
+  .person-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .fact {
+    background: var(--bg-deep);
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--card-hi);
+  }
+  .fact-label {
+    color: var(--dim);
+    font-size: 10px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .fact-value {
+    color: var(--off);
+    font-size: 13px;
+    font-weight: bold;
+  }
+  .bio-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .bio-label { font-size: 11px; font-weight: bold; color: var(--teal); }
+  .bio-toggle {
+    margin-left: auto;
+    padding: 4px 10px;
+    background: var(--card-hi);
+    border: 1px solid var(--teal);
+    border-radius: 7px;
+    color: var(--teal);
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .bio-toggle:hover { background: var(--card); }
+
+  .bio {
+    color: var(--off);
+    font-size: 13px;
+    line-height: 1.75;
+    max-height: 260px;
+    overflow-y: auto;
+    padding-right: 10px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--purple) transparent;
+  }
+  .bio::-webkit-scrollbar { width: 6px; }
+  .bio::-webkit-scrollbar-thumb { background: var(--purple); border-radius: 3px; }
+
+  /* ============ 반응형 ============ */
+  @media (max-width: 1250px) {
+    .grid { grid-template-columns: repeat(4, 1fr); }   /* 좁아지면 가로 4개 */
+  }
+  @media (max-width: 640px) {
+    .grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { position: static; }
+    .grid { grid-template-columns: repeat(3, 1fr); }
+    header.list-header h1 { font-size: 26px; }
+    .hero-content { grid-template-columns: 1fr; margin-top: -80px; gap: 20px; }
+    .hero-poster { width: 160px; margin: 0 auto; }
+    .hero-info { padding-top: 0; text-align: center; }
+    .hero-meta { justify-content: center; }
+    .backdrop { height: 240px; }
+    .person-container { grid-template-columns: 1fr; text-align: center; }
+    .person-photo { margin: 0 auto; }
+  }
+
+  footer {
+    text-align: center;
+    padding: 40px 0 10px;
+    color: var(--dim);
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- 뷰 1: 목록 (검색·필터) -->
+<!-- ============================================================ -->
+<div id="listView" class="view">
+  <header class="list-header">
+    <h1 onclick="goHome()">🎬 영화 취향 저격기</h1>
+    <div class="sub">TMDB에서 진짜 데이터 가져와서 · 내 취향에 딱 맞는 영화 찾기</div>
+    <div class="demo-badge" id="demoBadge" style="display:none;">📦 데모 모드 (API 키 넣으면 진짜 검색)</div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="🎬 영화 · 👤 배우/감독 이름..." />
+      </div>
+
+      <div class="filter-group">
+        <h3>🎭 장르</h3>
+        <div class="genre-chips" id="genreChips"></div>
+      </div>
+
+      <div class="filter-group">
+        <label>📅 개봉연도  <b><span id="yearVal">2020</span>년 이후</b></label>
+        <input type="range" id="yearInput" min="1990" max="2026" value="2020" step="1">
+      </div>
+
+      <div class="filter-group">
+        <label>⭐ 최소 평점  <b><span id="ratingVal">7.0</span> 이상</b></label>
+        <input type="range" id="ratingInput" min="0" max="9" value="7" step="0.5">
+      </div>
+
+      <div class="filter-group">
+        <h3>🔃 정렬</h3>
+        <select id="sortSelect">
+          <option value="popularity.desc">🔥 인기순</option>
+          <option value="vote_average.desc">⭐ 평점순</option>
+          <option value="primary_release_date.desc">🆕 최신순</option>
+          <option value="revenue.desc">💰 수익순</option>
+        </select>
+      </div>
+
+      <button class="btn-reset" onclick="resetFilters()">↺  필터 초기화</button>
+    </aside>
+
+    <main class="results">
+      <div class="results-header">
+        <div class="results-count">
+          <span id="countLabel">0</span>
+          <span style="color:var(--dim); font-size:11px;">· 카드 클릭 시 상세 정보</span>
+        </div>
+      </div>
+
+      <div id="resultsGrid"></div>
+
+      <div id="loadingBox" class="loading" style="display:none;">
+        <div class="spinner"></div>
+        <div style="margin-top:16px;">영화 가져오는 중...</div>
+      </div>
+
+      <div id="emptyBox" class="empty" style="display:none;">
+        <div class="emoji">🎬</div>
+        <h2>조건에 맞는 영화가 없어요</h2>
+        <p>필터를 조금 완화해보세요!</p>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 뷰 2: 상세 (영화 or 인물) -->
+<!-- ============================================================ -->
+<div id="detailView" class="view hidden">
+  <div class="detail-container">
+    <div class="detail-nav">
+      <button class="back-btn" onclick="goBack()">← 뒤로가기</button>
+      <button class="home-btn" onclick="goHome()" title="첫 화면으로 돌아가기">🏠 홈</button>
+    </div>
+    <div id="detailContent">
+      <!-- JS로 채움 -->
+    </div>
+  </div>
+</div>
+
+<footer>
+  이리고등학교 · 코딩 교육 2026 · 7주차 · 데이터 by TMDB
+</footer>
+
+<script>
+// ============================================================
+// ⚙️ API 키 (없으면 데모 모드)
+// TMDB 키 발급: https://www.themoviedb.org/settings/api
+// ============================================================
+const API_KEY = "a752d107ecd909a76e90c39f18c19d31";
+const BASE = "https://api.themoviedb.org/3";
+const IMG_BASE = "https://image.tmdb.org/t/p/w300";
+const IMG_BASE_LG = "https://image.tmdb.org/t/p/w780";
+const IMG_BASE_BACKDROP = "https://image.tmdb.org/t/p/original";
+
+const DEMO_MODE = (API_KEY === "YOUR_TMDB_API_KEY");
+
+// ============================================================
+// 장르 목록 (TMDB 공식 ID)
+// ============================================================
+const GENRES = [
+  { id: 28,    name: "액션",   emoji: "💥" },
+  { id: 878,   name: "SF",     emoji: "🚀" },
+  { id: 35,    name: "코미디", emoji: "😂" },
+  { id: 10749, name: "로맨스", emoji: "💕" },
+  { id: 27,    name: "공포",   emoji: "👻" },
+  { id: 16,    name: "애니",   emoji: "🎨" },
+  { id: 18,    name: "드라마", emoji: "🎭" },
+  { id: 53,    name: "스릴러", emoji: "🔪" },
+  { id: 12,    name: "모험",   emoji: "🗺️" },
+];
+const GENRE_MAP = Object.fromEntries(GENRES.map(g => [g.id, g.name]));
+
+let selectedGenres = new Set();
+
+// ============================================================
+// 데모 데이터 (API 키 없어도 UI 보이도록)
+// ============================================================
+const DEMO_MOVIES = [
+  { id: 496243, title: "기생충", release_date: "2019-05-30", vote_average: 8.5,
+    overview: "폭우가 쏟아지던 어느 날, 반지하에 사는 기택네 가족은 부잣집 박사장네와 얽히게 된다.",
+    poster_path: "/igJrbcNQGOkg8tPKY6bfnvfWNfe.jpg" },
+  { id: 157336, title: "인터스텔라", release_date: "2014-11-05", vote_average: 8.4,
+    overview: "세계 각국의 정부와 경제가 완전히 붕괴된 미래. 마지막 희망을 안고 우주로 떠나는 이야기.",
+    poster_path: "/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg" },
+  { id: 330457, title: "겨울왕국 2", release_date: "2019-11-20", vote_average: 7.3,
+    overview: "엘사가 자신의 신비한 힘의 근원을 찾기 위해 미지의 땅으로 떠나는 여정.",
+    poster_path: "/dRLNc0ZE5ftmS8XSGvsPpJC3vd6.jpg" },
+  { id: 693134, title: "듄: 파트 2", release_date: "2024-02-27", vote_average: 8.2,
+    overview: "폴 아트레이데스가 프레멘 부족과 함께 우주의 운명을 걸고 벌이는 전쟁.",
+    poster_path: "/wtlgHZ4jrqlhSbTe0FzMHhbcwHR.jpg" },
+  { id: 872585, title: "오펜하이머", release_date: "2023-07-19", vote_average: 8.1,
+    overview: "원자폭탄을 만든 과학자 오펜하이머의 삶과 도덕적 딜레마.",
+    poster_path: "/kwj4Krqf4vp8pQXAK2WKZjxYNPU.jpg" },
+  { id: 361743, title: "탑건: 매버릭", release_date: "2022-05-24", vote_average: 8.3,
+    overview: "30년 만에 파일럿 매버릭이 최정예 팀을 이끄는 위험천만한 임무에 나선다.",
+    poster_path: "/62HCnUTziyWcpDaBO2i1DX17ljH.jpg" },
+  { id: 634649, title: "스파이더맨: 노 웨이 홈", release_date: "2021-12-15", vote_average: 8.0,
+    overview: "정체가 밝혀진 피터 파커. 닥터 스트레인지에게 도움을 청하면서 멀티버스가 열린다.",
+    poster_path: "/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg" },
+  { id: 615457, title: "미나리", release_date: "2020-12-11", vote_average: 7.4,
+    overview: "낯선 미국 아칸소로 이주한 한국 가족이 새로운 뿌리를 내리는 이야기.",
+    poster_path: "/9Bb6K6HINl3vEKCu8WXTZASzIsE.jpg" },
+  { id: 624860, title: "매트릭스: 리저렉션", release_date: "2021-12-22", vote_average: 6.5,
+    overview: "네오가 다시 매트릭스에 갇힌 후 진실을 찾아 나서는 새로운 여정.",
+    poster_path: "/8c4a8kE7PizaGQQnditMmI1xbRp.jpg" },
+  { id: 313369, title: "라라랜드", release_date: "2016-11-29", vote_average: 8.0,
+    overview: "재즈 피아니스트와 배우 지망생의 로맨스와 꿈에 대한 이야기.",
+    poster_path: "/uDO8zWDhfWwoFdKS4fzkUJt0Rf0.jpg" },
+  { id: 299534, title: "어벤져스: 엔드게임", release_date: "2019-04-24", vote_average: 8.3,
+    overview: "타노스에게 절반의 우주가 사라진 후, 어벤져스가 다시 모여 마지막 전쟁을 벌인다.",
+    poster_path: "/or06FN3Dka5tukK1e9sl16pB3iy.jpg" },
+  { id: 420817, title: "라이온 킹", release_date: "2019-07-12", vote_average: 7.1,
+    overview: "심바가 아버지의 원수를 갚고 왕이 되기 위한 성장 이야기.",
+    poster_path: "/dzBtMocZuJbjLOXvrl4zGYigDzh.jpg" },
+];
+
+// 데모 상세 데이터 (일부 대표 영화만 - 실제 API 있으면 이거 안 씀)
+const DEMO_MOVIE_DETAILS = {
+  496243: { // 기생충
+    id: 496243, title: "기생충", original_title: "기생충",
+    release_date: "2019-05-30", runtime: 132, vote_average: 8.5,
+    genres: [{id:35,name:"코미디"},{id:53,name:"스릴러"},{id:18,name:"드라마"}],
+    tagline: "행복은 나눌 수 없다.",
+    overview: "전원백수로 살 길 막막하지만 사이는 좋은 기택 가족. 장남 기우에게 명문대생 친구가 연결시켜 준 고액 과외 자리는 모처럼 싹튼 큰 돈벌이의 기회. 온 가족의 도움과 기대 속에 박사장 집으로 향한 기우는 그곳에서 만난 사모님 연교와 매력적인 딸 다혜에게 자신의 정체를 숨긴 채 수업을 시작하는데... 그러나 이렇게 시작된 두 가족의 만남 뒤로, 걷잡을 수 없는 사건이 기다리고 있었으니...",
+    backdrop_path: "/TU9NIjwzjoKPwQHoHshkFcQUCG.jpg",
+    poster_path: "/igJrbcNQGOkg8tPKY6bfnvfWNfe.jpg",
+    credits: {
+      cast: [
+        { id: 21684, name: "송강호", character: "김기택", profile_path: "/nRxfj0P50f9UYnZfNe63l1ByPB4.jpg" },
+        { id: 84224, name: "이선균", character: "박동익", profile_path: "/lqrhZ5xoY43iRlHRUmhrK9GXsCz.jpg" },
+        { id: 1373737, name: "조여정", character: "최연교", profile_path: "/aURrDbb2CXaqvJHIzC0AmZLZP4S.jpg" },
+        { id: 1373738, name: "최우식", character: "김기우", profile_path: "/vC9UYGkcTIiuhqXlHc6c5jRHqSm.jpg" },
+        { id: 1360627, name: "박소담", character: "김기정", profile_path: "/hCyKYqewQCDbnvChFbGKgIvzy8N.jpg" },
+        { id: 1220154, name: "장혜진", character: "충숙", profile_path: "/8vhaXpZBjOD3rMD5RQjeR2CMlEV.jpg" },
+      ],
+      crew: [
+        { id: 5655, name: "봉준호", job: "Director", profile_path: "/oXbNS7VLYAP7XiUq6UdgBLZQaGx.jpg" },
+      ],
+    },
+    videos: { results: [{ key: "SEUXfv87Wpk", site: "YouTube", type: "Trailer" }] },
+    similar: { results: [
+      { id: 157336, title: "인터스텔라", vote_average: 8.4, release_date: "2014-11-05", poster_path: "/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg" },
+      { id: 615457, title: "미나리", vote_average: 7.4, release_date: "2020-12-11", poster_path: "/9Bb6K6HINl3vEKCu8WXTZASzIsE.jpg" },
+      { id: 313369, title: "라라랜드", vote_average: 8.0, release_date: "2016-11-29", poster_path: "/uDO8zWDhfWwoFdKS4fzkUJt0Rf0.jpg" },
+    ]},
+  },
+  157336: { // 인터스텔라
+    id: 157336, title: "인터스텔라", original_title: "Interstellar",
+    release_date: "2014-11-05", runtime: 169, vote_average: 8.4,
+    genres: [{id:12,name:"모험"},{id:18,name:"드라마"},{id:878,name:"SF"}],
+    tagline: "우리는 답을 찾을 것이다. 늘 그랬듯이.",
+    overview: "세계 각국의 정부와 경제가 완전히 붕괴된 미래. 지난 20세기에 범한 잘못이 전 세계적인 식량 부족을 불러왔고, NASA도 해체되었다. 사람들이 이 땅을 떠날 계획을 세우게 되자, 나사와 함께 이 계획의 실행을 책임진 브랜드 박사는 걸출한 파일럿이었던 쿠퍼에게 자신들이 방금 발견한 것을 살펴봐 달라고 부탁한다.",
+    backdrop_path: "/pbrkL804c8yAv3zBZR4QPEafpAR.jpg",
+    poster_path: "/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",
+    credits: {
+      cast: [
+        { id: 10297, name: "매튜 매커너히", character: "쿠퍼", profile_path: "/wJiGedOCZhwMx9DezY8uwbNxmAY.jpg" },
+        { id: 1892, name: "앤 해서웨이", character: "브랜드 박사", profile_path: "/tLelKoPNiyJCSEtQTz1FGv4TLGc.jpg" },
+        { id: 2039, name: "제시카 차스테인", character: "머피 (성인)", profile_path: "/lodMzLKSdrPcBry6TdoDsMN3Vge.jpg" },
+        { id: 1948, name: "마이클 케인", character: "브랜드 교수", profile_path: "/hZgvfxN1B6iOEIiEwOSTdRIsL8W.jpg" },
+      ],
+      crew: [
+        { id: 525, name: "크리스토퍼 놀란", job: "Director", profile_path: "/xuAIuYSmsUzKlUMBFGVZaWsY3DZ.jpg" },
+      ],
+    },
+    videos: { results: [{ key: "0vxOhd4qlnA", site: "YouTube", type: "Trailer" }] },
+    similar: { results: [
+      { id: 872585, title: "오펜하이머", vote_average: 8.1, release_date: "2023-07-19", poster_path: "/kwj4Krqf4vp8pQXAK2WKZjxYNPU.jpg" },
+      { id: 693134, title: "듄: 파트 2", vote_average: 8.2, release_date: "2024-02-27", poster_path: "/wtlgHZ4jrqlhSbTe0FzMHhbcwHR.jpg" },
+      { id: 624860, title: "매트릭스: 리저렉션", vote_average: 6.5, release_date: "2021-12-22", poster_path: "/8c4a8kE7PizaGQQnditMmI1xbRp.jpg" },
+    ]},
+  },
+};
+
+// 데모 인물 데이터
+const DEMO_PERSONS = {
+  21684: {
+    id: 21684, name: "송강호", also_known_as: ["Song Kang-ho"],
+    birthday: "1967-01-17", place_of_birth: "김해, 대한민국",
+    known_for_department: "Acting",
+    biography: "송강호는 대한민국의 대표적인 영화배우다. 봉준호, 박찬욱, 이창동 등 한국 대표 감독들과 다수 협업했으며, '기생충'으로 칸 영화제 황금종려상 수상에 기여했다. 대표작으로 '살인의 추억', '괴물', '변호인', '택시운전사', '기생충', '브로커' 등이 있다.",
+    profile_path: "/nRxfj0P50f9UYnZfNe63l1ByPB4.jpg",
+    movie_credits: { cast: [
+      { id: 496243, title: "기생충", character: "김기택", release_date: "2019-05-30", vote_average: 8.5, poster_path: "/igJrbcNQGOkg8tPKY6bfnvfWNfe.jpg" },
+      { id: 615457, title: "미나리", character: "특별출연", release_date: "2020-12-11", vote_average: 7.4, poster_path: "/9Bb6K6HINl3vEKCu8WXTZASzIsE.jpg" },
+    ]},
+  },
+  5655: {
+    id: 5655, name: "봉준호", also_known_as: ["Bong Joon-ho"],
+    birthday: "1969-09-14", place_of_birth: "대구, 대한민국",
+    known_for_department: "Directing",
+    biography: "봉준호는 대한민국의 영화감독이자 각본가다. '살인의 추억', '괴물', '설국열차', '옥자'로 국내외에서 큰 성공을 거두었으며, 2019년 '기생충'으로 칸 영화제 황금종려상과 아카데미 작품상·감독상 등 4관왕을 차지하며 세계적인 감독의 반열에 올랐다. 장르 융합과 사회 비판적 시선으로 유명하다.",
+    profile_path: "/oXbNS7VLYAP7XiUq6UdgBLZQaGx.jpg",
+    movie_credits: { cast: [
+      { id: 496243, title: "기생충", character: "감독·각본", release_date: "2019-05-30", vote_average: 8.5, poster_path: "/igJrbcNQGOkg8tPKY6bfnvfWNfe.jpg" },
+    ]},
+  },
+  525: {
+    id: 525, name: "크리스토퍼 놀란", also_known_as: ["Christopher Nolan"],
+    birthday: "1970-07-30", place_of_birth: "런던, 잉글랜드, 영국",
+    known_for_department: "Directing",
+    biography: "크리스토퍼 놀란은 영국계 미국인 영화감독, 각본가, 제작자이다. 시간, 기억, 정체성에 대한 철학적 탐구가 담긴 지적이고 웅장한 스토리텔링으로 유명하다. 대표작으로 '메멘토', '다크 나이트 3부작', '인셉션', '인터스텔라', '테넷', '오펜하이머' 등이 있으며, 2024년 '오펜하이머'로 아카데미 감독상을 수상했다.",
+    profile_path: "/xuAIuYSmsUzKlUMBFGVZaWsY3DZ.jpg",
+    movie_credits: { cast: [
+      { id: 157336, title: "인터스텔라", character: "감독", release_date: "2014-11-05", vote_average: 8.4, poster_path: "/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg" },
+      { id: 872585, title: "오펜하이머", character: "감독·각본", release_date: "2023-07-19", vote_average: 8.1, poster_path: "/kwj4Krqf4vp8pQXAK2WKZjxYNPU.jpg" },
+    ]},
+  },
+  10297: {
+    id: 10297, name: "매튜 매커너히", also_known_as: ["Matthew McConaughey"],
+    birthday: "1969-11-04", place_of_birth: "웨일리스 리버, 텍사스, 미국",
+    known_for_department: "Acting",
+    biography: "매튜 매커너히는 미국의 배우이자 프로듀서다. '달라스 바이어스 클럽'으로 아카데미 남우주연상을 수상했으며, '인터스텔라', '트루 디텍티브', '더 울프 오브 월스트리트' 등 다양한 장르에서 활약해왔다. 특유의 나른한 남부 억양과 카리스마로 유명하다.",
+    profile_path: "/wJiGedOCZhwMx9DezY8uwbNxmAY.jpg",
+    movie_credits: { cast: [
+      { id: 157336, title: "인터스텔라", character: "쿠퍼", release_date: "2014-11-05", vote_average: 8.4, poster_path: "/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg" },
+    ]},
+  },
+};
+
+// ============================================================
+// 라우팅 (URL 해시 기반)
+// ============================================================
+window.addEventListener("hashchange", handleRoute);
+
+function handleRoute() {
+  const hash = window.location.hash;
+  if (hash.startsWith("#movie/")) {
+    const id = hash.split("/")[1];
+    showMovieDetail(id);
+  } else if (hash.startsWith("#person/")) {
+    const id = hash.split("/")[1];
+    showPersonDetail(id);
+  } else {
+    showListView();
+  }
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+// 뒤로 가기용 이동 기록.
+// 브라우저 히스토리로 되돌리면 00.index.html 처럼 아이프레임 안에서 열렸을 때
+// 페이지 전체가 밖으로 나가버리므로 직접 기록을 남긴다.
+const navStack = [];
+
+function goToMovie(id)  { navStack.push(window.location.hash); window.location.hash = `#movie/${id}`; }
+function goToPerson(id) { navStack.push(window.location.hash); window.location.hash = `#person/${id}`; }
+function goHome() {
+  navStack.length = 0;
+  window.location.hash = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function goBack()       { window.location.hash = navStack.length ? navStack.pop() : ''; }
+
+// ============================================================
+// 뷰 전환
+// ============================================================
+function showListView() {
+  document.getElementById("listView").classList.remove("hidden");
+  document.getElementById("detailView").classList.add("hidden");
+}
+
+function showDetailView() {
+  document.getElementById("listView").classList.add("hidden");
+  document.getElementById("detailView").classList.remove("hidden");
+}
+
+// ============================================================
+// 초기화
+// ============================================================
+function init() {
+  renderGenreChips();
+  setupEventListeners();
+  if (DEMO_MODE) {
+    document.getElementById("demoBadge").style.display = "inline-block";
+  }
+  handleRoute();
+  if (!window.location.hash) search(); // 첫 로딩
+}
+
+function renderGenreChips() {
+  const container = document.getElementById("genreChips");
+  container.innerHTML = GENRES.map(g =>
+    `<div class="chip" data-id="${g.id}" onclick="toggleGenre(${g.id}, this)">
+       ${g.emoji} ${g.name}
+     </div>`
+  ).join("");
+}
+
+function toggleGenre(id, el) {
+  if (selectedGenres.has(id)) {
+    selectedGenres.delete(id);
+    el.classList.remove("active");
+  } else {
+    selectedGenres.add(id);
+    el.classList.add("active");
+  }
+  search();
+}
+
+function setupEventListeners() {
+  let searchTimer;
+  document.getElementById("searchInput").addEventListener("input", () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(search, 400);
+  });
+  document.getElementById("yearInput").addEventListener("input", (e) => {
+    document.getElementById("yearVal").textContent = e.target.value;
+  });
+  document.getElementById("yearInput").addEventListener("change", search);
+  document.getElementById("ratingInput").addEventListener("input", (e) => {
+    document.getElementById("ratingVal").textContent = Number(e.target.value).toFixed(1);
+  });
+  document.getElementById("ratingInput").addEventListener("change", search);
+  document.getElementById("sortSelect").addEventListener("change", search);
+}
+
+// ============================================================
+// 🔍 검색 (핵심 fetch) - 영화 + 인물 병렬로!
+// ============================================================
+// 지금 보고 있는 목록의 상태 (더 불러오기에 필요)
+let listState = { page: 1, totalPages: 1, totalResults: 0, loading: false, movies: [] };
+
+async function search() {
+  listState = { page: 1, totalPages: 1, totalResults: 0, loading: false, movies: [] };
+  await runSearch(1);
+}
+
+// page가 1이면 새로 그리고, 2 이상이면 뒤에 이어 붙인다
+async function runSearch(page) {
+  const query   = document.getElementById("searchInput").value.trim();
+  const year    = document.getElementById("yearInput").value;
+  const rating  = document.getElementById("ratingInput").value;
+  const sortBy  = document.getElementById("sortSelect").value;
+
+  if (page === 1) showLoading();
+  listState.loading = true;
+
+  try {
+    let movies = [];
+    let persons = [];
+
+    if (DEMO_MODE) {
+      await new Promise(r => setTimeout(r, 300));
+
+      if (query) {
+        // 검색 모드: 필터 무시, 제목 매칭만 (실제 /search/movie와 동일 동작)
+        movies = DEMO_MOVIES.filter(m => m.title.includes(query));
+
+        // 인물 검색 (이름 매칭)
+        persons = Object.values(DEMO_PERSONS)
+          .filter(p => p.name.includes(query) ||
+                       (p.also_known_as && p.also_known_as.some(n => n.toLowerCase().includes(query.toLowerCase()))));
+      } else {
+        // 발견 모드: 필터 적용 (실제 /discover/movie와 동일 동작)
+        movies = DEMO_MOVIES.filter(m => {
+          const y = parseInt(m.release_date);
+          if (y < parseInt(year)) return false;
+          if (m.vote_average < parseFloat(rating)) return false;
+          return true;
+        });
+        if (sortBy === "vote_average.desc") movies.sort((a,b) => b.vote_average - a.vote_average);
+        else if (sortBy === "primary_release_date.desc") movies.sort((a,b) => b.release_date.localeCompare(a.release_date));
+      }
+      listState.totalPages = 1;                 // 데모 데이터는 한 묶음뿐
+      listState.totalResults = movies.length;
+    } else {
+      if (query) {
+        // 🚀 영화 + 인물 동시에 검색! (Promise.all - 7주차 배운 것 활용)
+        const movieUrl  = `${BASE}/search/movie?api_key=${API_KEY}&language=ko-KR&query=${encodeURIComponent(query)}&page=${page}`;
+        const personUrl = `${BASE}/search/person?api_key=${API_KEY}&language=ko-KR&query=${encodeURIComponent(query)}`;
+
+        const [movieRes, personRes] = await Promise.all([
+          fetch(movieUrl).then(r => r.json()),
+          fetch(personUrl).then(r => r.json()),
+        ]);
+
+        movies  = movieRes.results  || [];
+        persons = page === 1 ? (personRes.results || []).slice(0, 8) : [];   // 인물은 첫 페이지만
+        listState.totalPages   = movieRes.total_pages   || 1;
+        listState.totalResults = movieRes.total_results || movies.length;
+      } else {
+        // 검색어 없으면 필터 기반 발견
+        const url = `${BASE}/discover/movie?api_key=${API_KEY}&language=ko-KR`
+              + `&sort_by=${sortBy}`
+              + `&primary_release_date.gte=${year}-01-01`
+              + `&vote_average.gte=${rating}`
+              + `&vote_count.gte=100`
+              + `&page=${page}`
+              + (selectedGenres.size > 0 ? `&with_genres=${[...selectedGenres].join(",")}` : "");
+        const res = await fetch(url);
+        const data = await res.json();
+        movies = data.results || [];
+        listState.totalPages   = Math.min(data.total_pages || 1, 500);   // TMDB는 500페이지까지
+        listState.totalResults = data.total_results || movies.length;
+      }
+    }
+    listState.page = page;
+    if (page === 1) {
+      listState.movies = movies;
+      render(movies, persons);
+    } else {
+      appendMovies(movies);
+    }
+  } catch (err) {
+    console.error(err);
+    if (page === 1) showError(err.message);
+  } finally {
+    listState.loading = false;
+    updateLoadMore();
+  }
+}
+
+// ============================================================
+// ⬇️ 더 보기 / 스크롤 끝에서 자동으로 불러오기
+// ============================================================
+async function loadMore() {
+  if (listState.loading) return;                       // 이미 불러오는 중이면 무시
+  if (listState.page >= listState.totalPages) return;  // 마지막 페이지면 끝
+  const btn = document.getElementById("loadMoreBtn");
+  if (btn) { btn.disabled = true; btn.textContent = "불러오는 중..."; }
+  await runSearch(listState.page + 1);
+}
+
+// 새로 받은 영화들을 목록 뒤에 붙인다
+function appendMovies(movies) {
+  const grid = document.getElementById("movieGrid");
+  if (!grid || movies.length === 0) return;
+
+  // 이미 있는 영화는 건너뛴다 (페이지가 겹칠 때 중복 방지)
+  const have = new Set(listState.movies.map(m => m.id));
+  const fresh = movies.filter(m => !have.has(m.id));
+  listState.movies = listState.movies.concat(fresh);
+
+  const startIdx = grid.children.length;
+  grid.insertAdjacentHTML("beforeend",
+    fresh.map((m, i) => movieCardHtml(m, startIdx + i)).join(""));
+
+  document.getElementById("countLabel").innerHTML =
+    `영화 <b style="color:var(--teal);">${listState.movies.length}</b>편` +
+    (listState.totalResults > listState.movies.length
+      ? ` <span style="color:var(--dim);font-size:12px;">/ 전체 ${listState.totalResults.toLocaleString()}편</span>` : "");
+}
+
+// [더 보기] 버튼 상태 갱신
+function updateLoadMore() {
+  const wrap = document.getElementById("loadMoreWrap");
+  if (!wrap) return;
+  const btn = document.getElementById("loadMoreBtn");
+  const info = document.getElementById("loadMoreInfo");
+  const hasMore = listState.page < listState.totalPages;
+
+  wrap.style.display = listState.movies.length > 0 ? "flex" : "none";
+  if (btn) {
+    btn.style.display = hasMore ? "" : "none";
+    btn.disabled = false;
+    btn.textContent = "⬇️ 더 보기";
+  }
+  if (info) {
+    info.textContent = hasMore
+      ? `${listState.page} / ${listState.totalPages} 페이지 · 아래로 내리면 자동으로 더 불러와요`
+      : (listState.movies.length ? "마지막이에요! 모든 영화를 다 봤어요 🎬" : "");
+  }
+}
+
+// 목록 맨 아래가 화면에 들어오면 자동으로 다음 페이지를 부른다
+let listObserver = null;
+function setupAutoLoad() {
+  const sentinel = document.getElementById("scrollSentinel");
+  if (!sentinel) return;
+  if (listObserver) listObserver.disconnect();
+  listObserver = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) loadMore();
+  }, { rootMargin: "200px" });    // 조금 미리 불러와서 끊김 없이
+  listObserver.observe(sentinel);
+}
+
+// ============================================================
+// 🎨 목록 그리기 (인물 + 영화)
+// ============================================================
+function render(movies, persons = []) {
+  hideLoading();
+  const grid = document.getElementById("resultsGrid");
+  const count = document.getElementById("countLabel");
+
+  // 카운트 라벨
+  if (persons.length > 0) {
+    count.innerHTML = `영화 <b style="color:var(--teal);">${movies.length}</b>편 · 인물 <b style="color:var(--pink);">${persons.length}</b>명`;
+  } else {
+    count.innerHTML = `영화 <b style="color:var(--teal);">${movies.length}</b>편`;
+  }
+
+  // 완전히 빈 결과
+  if (movies.length === 0 && persons.length === 0) {
+    grid.innerHTML = "";
+    document.getElementById("emptyBox").style.display = "block";
+    return;
+  }
+  document.getElementById("emptyBox").style.display = "none";
+
+  let html = "";
+
+  // 인물 섹션 (검색 결과 있을 때만)
+  if (persons.length > 0) {
+    html += `
+      <div class="person-section">
+        <div class="person-section-title">
+          👤 이름과 일치하는 인물 <span class="count">${persons.length}</span>
+          <span class="hint">· 클릭하면 그 배우·감독의 작품이 다 보여요</span>
+        </div>
+        <div class="person-results-grid">
+          ${persons.map((p, i) => personResultCardHtml(p, i)).join("")}
+        </div>
+      </div>
+    `;
+  }
+
+  // 영화 섹션
+  if (movies.length > 0) {
+    if (persons.length > 0) {
+      html += `<div class="results-section-title">🎬 관련 영화 <span class="count">${movies.length}</span></div>`;
+    }
+    html += `<div class="grid" id="movieGrid">${movies.map((m, idx) => movieCardHtml(m, idx)).join("")}</div>`;
+  } else if (persons.length > 0) {
+    // 인물만 나오고 영화는 없을 때
+    html += `
+      <div class="empty" style="padding: 40px 20px;">
+        <div class="emoji">🎬</div>
+        <p>제목이 일치하는 영화는 없어요. 위 인물을 클릭해서 필모그래피 확인!</p>
+      </div>
+    `;
+  }
+
+  // 목록 끝: [더 보기] 버튼 + 자동 불러오기 감지용 표시점
+  html += `
+    <div class="load-more-wrap" id="loadMoreWrap" style="display:none;">
+      <button class="load-more-btn" id="loadMoreBtn" onclick="loadMore()">⬇️ 더 보기</button>
+      <div class="load-more-info" id="loadMoreInfo"></div>
+      <div id="scrollSentinel" style="height:1px;"></div>
+    </div>`;
+
+  grid.innerHTML = html;
+  updateLoadMore();
+  setupAutoLoad();
+}
+
+// 인물 검색 결과 카드 HTML
+function personResultCardHtml(p, idx = 0) {
+  const hue = (idx * 53 + 320) % 360;
+  const photoHtml = p.profile_path
+    ? `<img src="${IMG_BASE}${p.profile_path}" alt="${p.name}" loading="lazy" onerror="this.parentElement.classList.add('no-image'); this.parentElement.style.setProperty('--fallback-hue', '${hue}deg'); this.remove();">`
+    : ``;
+  const noImageClass = p.profile_path ? '' : 'no-image';
+  const hueStyle = !p.profile_path ? `style="--fallback-hue: ${hue}deg;"` : '';
+
+  // "known_for" - 이 사람이 유명해진 작품 (TMDB API 반환)
+  let knownForTitles = "";
+  if (p.known_for && p.known_for.length > 0) {
+    knownForTitles = p.known_for.map(k => k.title || k.name).filter(Boolean).slice(0, 2).join(", ");
+  } else if (p.movie_credits && p.movie_credits.cast && p.movie_credits.cast.length > 0) {
+    // 데모 모드
+    knownForTitles = p.movie_credits.cast.slice(0, 2).map(m => m.title).join(", ");
+  }
+
+  const roleMap = { "Acting": "배우", "Directing": "감독", "Writing": "작가", "Production": "제작" };
+  const role = roleMap[p.known_for_department] || "";
+  const subLine = knownForTitles || role || "정보 없음";
+
+  return `
+    <div class="person-result-card" onclick="goToPerson(${p.id})">
+      <div class="person-result-photo ${noImageClass}" ${hueStyle}>
+        ${photoHtml || '👤'}
+      </div>
+      <div class="person-result-info">
+        <div class="person-result-name">${p.name}</div>
+        <div class="person-result-known">${subLine}</div>
+      </div>
+    </div>
+  `;
+}
+
+// 공용 영화 카드 HTML (목록·비슷한영화·필모그래피 모두 사용)
+function movieCardHtml(m, idx = 0) {
+  const year = m.release_date ? m.release_date.substring(0, 4) : "?";
+  const rating = m.vote_average ? m.vote_average.toFixed(1) : "?";
+  const hue = (idx * 47) % 360;
+  const posterHtml = m.poster_path
+    ? `<img src="${IMG_BASE}${m.poster_path}" alt="${m.title}" loading="lazy" onerror="this.parentElement.classList.add('no-image'); this.parentElement.style.setProperty('--fallback-hue', '${hue}deg'); this.remove();">`
+    : ``;
+  const noImageClass = m.poster_path ? '' : 'no-image';
+  const hueStyle = !m.poster_path ? `style="--fallback-hue: ${hue}deg;"` : '';
+  return `
+    <div class="movie" onclick="goToMovie(${m.id})">
+      <div class="poster ${noImageClass}" ${hueStyle}>
+        ${posterHtml}
+        <div class="rating-badge">⭐ ${rating}</div>
+        <div class="overlay"><div class="overview">${m.overview || "줄거리 정보가 없어요"}</div></div>
+      </div>
+      <div class="movie-info">
+        <div class="movie-title">${m.title}</div>
+        <div class="movie-meta">${year}</div>
+      </div>
+    </div>
+  `;
+}
+
+function showLoading() {
+  document.getElementById("loadingBox").style.display = "block";
+  document.getElementById("emptyBox").style.display = "none";
+}
+function hideLoading() {
+  document.getElementById("loadingBox").style.display = "none";
+}
+function showError(msg) {
+  hideLoading();
+  document.getElementById("resultsGrid").innerHTML =
+    `<div class="empty" style="grid-column:1/-1;">
+       <div class="emoji">⚠️</div><h2>오류가 발생했어요</h2><p>${msg}</p>
+     </div>`;
+}
+function resetFilters() {
+  document.getElementById("searchInput").value = "";
+  document.getElementById("yearInput").value = 2020;
+  document.getElementById("yearVal").textContent = "2020";
+  document.getElementById("ratingInput").value = 7;
+  document.getElementById("ratingVal").textContent = "7.0";
+  document.getElementById("sortSelect").value = "popularity.desc";
+  selectedGenres.clear();
+  document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+  search();
+}
+
+// ============================================================
+// 🎬 영화 상세 뷰
+// ============================================================
+async function showMovieDetail(id) {
+  showDetailView();
+  const container = document.getElementById("detailContent");
+  container.innerHTML = `<div class="loading"><div class="spinner"></div><div style="margin-top:16px;">영화 정보 가져오는 중...</div></div>`;
+
+  try {
+    let movie;
+    if (DEMO_MODE) {
+      await new Promise(r => setTimeout(r, 400));
+      movie = DEMO_MOVIE_DETAILS[id];
+      if (!movie) {
+        // 데모 목록에서 기본 정보만 있는 영화
+        const basic = DEMO_MOVIES.find(m => m.id == id);
+        if (basic) {
+          movie = makeDemoDetail(basic);
+        } else {
+          throw new Error("데모 데이터에 없는 영화입니다");
+        }
+      }
+    } else {
+      // append_to_response로 여러 정보 한번에 가져오기!
+      const url = `${BASE}/movie/${id}?api_key=${API_KEY}&language=ko-KR&append_to_response=credits,videos,similar`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("영화를 찾을 수 없습니다");
+      movie = await res.json();
+    }
+    renderMovieDetail(movie);
+  } catch (err) {
+    container.innerHTML = `
+      <div class="empty">
+        <div class="emoji">⚠️</div>
+        <h2>영화 정보를 불러올 수 없어요</h2>
+        <p>${err.message}</p>
+      </div>`;
+  }
+}
+
+// 데모 모드에서 기본 정보만 있는 영화의 상세뷰 만들기
+function makeDemoDetail(basic) {
+  return {
+    ...basic,
+    original_title: basic.title,
+    runtime: 120,
+    genres: [{id:18,name:"드라마"}],
+    tagline: "",
+    backdrop_path: basic.poster_path,
+    credits: {
+      cast: [
+        { id: 999901, name: "배우1", character: "주인공", profile_path: null },
+        { id: 999902, name: "배우2", character: "조연", profile_path: null },
+        { id: 999903, name: "배우3", character: "악역", profile_path: null },
+      ],
+      crew: [{ id: 999900, name: "감독 정보", job: "Director", profile_path: null }],
+    },
+    videos: { results: [] },
+    similar: { results: DEMO_MOVIES.filter(m => m.id !== basic.id).slice(0, 6) },
+  };
+}
+
+function renderMovieDetail(m) {
+  const year = m.release_date ? m.release_date.substring(0, 4) : "?";
+  const runtime = m.runtime ? `${Math.floor(m.runtime/60)}시간 ${m.runtime%60}분` : "";
+  const rating = m.vote_average ? m.vote_average.toFixed(1) : "?";
+  const directors = (m.credits?.crew || []).filter(c => c.job === "Director");
+  const cast = (m.credits?.cast || []).slice(0, 15);
+  const trailer = (m.videos?.results || []).find(v => v.type === "Trailer" && v.site === "YouTube")
+                || (m.videos?.results || []).find(v => v.site === "YouTube");
+  // 비슷한 영화도 정렬해서 보여준다 (기본: 최신순)
+  similarMovies = (m.similar?.results || []).filter(s => s.release_date);
+  const similar = sortFilms(similarMovies, similarSort).slice(0, 8);
+
+  const heroHue = (m.id * 47) % 360;
+  const backdropStyle = m.backdrop_path
+    ? `background-image:url('${IMG_BASE_BACKDROP}${m.backdrop_path}'); --hero-hue:${heroHue}deg;`
+    : `--hero-hue:${heroHue}deg;`;
+  const posterHtml = m.poster_path
+    ? `<img src="${IMG_BASE_LG}${m.poster_path}" alt="${m.title}" onerror="this.parentElement.classList.add('no-image'); this.remove();">`
+    : ``;
+  const posterClass = m.poster_path ? '' : 'no-image';
+
+  document.getElementById("detailContent").innerHTML = `
+    <div class="movie-hero">
+      <div class="backdrop" style="${backdropStyle}"></div>
+      <div class="hero-content">
+        <div class="hero-poster ${posterClass}" style="--hero-hue:${heroHue}deg;">${posterHtml}</div>
+        <div class="hero-info">
+          <h1>${m.title}</h1>
+          ${m.original_title && m.original_title !== m.title
+            ? `<div class="hero-original">${m.original_title}</div>` : ''}
+          <div class="hero-meta">
+            <span class="item rating">⭐ ${rating}</span>
+            ${year ? `<span class="item">📅 ${year}</span>` : ''}
+            ${runtime ? `<span class="item">⏱️ ${runtime}</span>` : ''}
+          </div>
+          ${m.genres && m.genres.length ? `
+            <div class="genre-tags">
+              ${m.genres.map(g => `<span class="genre-tag">${g.name}</span>`).join("")}
+            </div>` : ''}
+          ${m.tagline ? `<div class="tagline">"${m.tagline}"</div>` : ''}
+          <div class="overview-full">${m.overview || "줄거리 정보가 없어요"}</div>
+          ${directors.length ? `
+            <div class="directors">
+              🎬 감독: ${directors.map(d =>
+                `<span class="name" onclick="goToPerson(${d.id})">${d.name}</span>`
+              ).join(", ")}
+            </div>` : ''}
+        </div>
+      </div>
+    </div>
+
+    ${cast.length ? `
+      <div class="section-title">
+        👥 등장인물 <span class="count">${cast.length}</span>
+        <span style="font-size:11px;color:var(--dim);font-weight:normal;">· 클릭하면 그 배우의 다른 작품이 보여요</span>
+      </div>
+      <div class="cast-row">
+        ${cast.map((c, i) => castCardHtml(c, i)).join("")}
+      </div>
+    ` : ''}
+
+    ${trailer ? `
+      <div class="section-title">🎥 예고편</div>
+      <div class="trailer-thumb" onclick="window.open('https://www.youtube.com/watch?v=${trailer.key}','_blank')"
+           title="유튜브에서 예고편 보기">
+        <img src="https://img.youtube.com/vi/${trailer.key}/hqdefault.jpg" alt="예고편 미리보기">
+        <div class="play-btn">▶</div>
+        <div class="trailer-note">클릭하면 유튜브에서 예고편이 열려요</div>
+      </div>
+    ` : ''}
+
+    ${similar.length ? `
+      <div class="section-title">
+        🎯 비슷한 영화 <span class="count">${similar.length}</span>
+        <span class="sort-tabs">
+          <button class="sort-tab ${similarSort === 'rating' ? 'active' : ''}" onclick="setSimilarSort('rating')">⭐ 평점순</button>
+          <button class="sort-tab ${similarSort === 'date' ? 'active' : ''}" onclick="setSimilarSort('date')">🗓️ 최신순</button>
+        </span>
+      </div>
+      <div class="similar-grid" id="similarGrid">
+        ${similar.map((s, i) => movieCardHtml(s, i)).join("")}
+      </div>
+    ` : ''}
+  `;
+}
+
+function castCardHtml(c, idx = 0) {
+  const hue = (idx * 53) % 360;
+  const photoHtml = c.profile_path
+    ? `<img src="${IMG_BASE}${c.profile_path}" alt="${c.name}" loading="lazy" onerror="this.parentElement.classList.add('no-image'); this.parentElement.style.setProperty('--fallback-hue', '${hue}deg'); this.remove();">`
+    : ``;
+  const noImageClass = c.profile_path ? '' : 'no-image';
+  const hueStyle = !c.profile_path ? `style="--fallback-hue: ${hue}deg;"` : '';
+  return `
+    <div class="cast-card" onclick="goToPerson(${c.id})">
+      <div class="cast-photo ${noImageClass}" ${hueStyle}>
+        ${photoHtml || '👤'}
+      </div>
+      <div class="cast-info">
+        <div class="cast-name">${c.name}</div>
+        <div class="cast-character">${c.character || ''}</div>
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================
+// 👤 인물 상세 뷰
+// ============================================================
+async function showPersonDetail(id) {
+  showDetailView();
+  const container = document.getElementById("detailContent");
+  container.innerHTML = `<div class="loading"><div class="spinner"></div><div style="margin-top:16px;">인물 정보 가져오는 중...</div></div>`;
+
+  try {
+    let person;
+    if (DEMO_MODE) {
+      await new Promise(r => setTimeout(r, 400));
+      person = DEMO_PERSONS[id];
+      if (!person) {
+        // 데모 데이터에 없는 사람 - 기본 정보만
+        person = {
+          id: id, name: "정보 없음",
+          also_known_as: [], biography: "이 인물의 상세 정보는 데모 모드에서는 확인할 수 없어요. API 키를 넣으면 실제 정보가 나옵니다!",
+          profile_path: null, birthday: null, place_of_birth: null,
+          known_for_department: "Acting",
+          movie_credits: { cast: [] },
+        };
+      }
+    } else {
+      const url = `${BASE}/person/${id}?api_key=${API_KEY}&language=ko-KR&append_to_response=movie_credits`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("인물을 찾을 수 없습니다");
+      person = await res.json();
+      // 한국어 biography가 비어있으면 영어로 재요청
+      if (!person.biography) {
+        try {
+          const enRes = await fetch(`${BASE}/person/${id}?api_key=${API_KEY}&language=en-US`);
+          const enData = await enRes.json();
+          person.biography = enData.biography || "";
+          person._bioIsEnglish = !!enData.biography;   // 영어 소개임을 표시 → 뒤에서 번역한다
+        } catch(e) {}
+      }
+    }
+    renderPersonDetail(person);
+  } catch (err) {
+    container.innerHTML = `
+      <div class="empty">
+        <div class="emoji">⚠️</div>
+        <h2>인물 정보를 불러올 수 없어요</h2>
+        <p>${err.message}</p>
+      </div>`;
+  }
+}
+
+function renderPersonDetail(p) {
+  const englishName = p.also_known_as && p.also_known_as.find(n => /^[a-zA-Z\s.-]+$/.test(n));
+  const roleMap = { "Acting": "🎭 배우", "Directing": "🎬 감독", "Writing": "✍️ 작가", "Production": "🎬 제작자" };
+  const role = roleMap[p.known_for_department] || p.known_for_department || "";
+
+  const bd = p.birthday ? new Date(p.birthday) : null;
+  const age = bd ? Math.floor((Date.now() - bd.getTime()) / (365.25 * 24 * 3600 * 1000)) : null;
+
+  // 필모그래피 - 평점순 상위 12개
+  // 대표작 목록 — 정렬 기준(filmSort)에 따라 순서를 바꾼다
+  personFilms = ((p.movie_credits?.cast) || [])
+    .filter(m => m.release_date && m.poster_path !== undefined);
+  const films = sortFilms(personFilms, filmSort);
+
+  const photoHtml = p.profile_path
+    ? `<img src="${IMG_BASE_LG}${p.profile_path}" alt="${p.name}" onerror="this.parentElement.classList.add('no-image'); this.remove();">`
+    : ``;
+  const photoClass = p.profile_path ? '' : 'no-image';
+
+  const bioText = p.biography || "이 인물의 소개가 아직 등록되어 있지 않아요.";
+
+  document.getElementById("detailContent").innerHTML = `
+    <div class="person-container">
+      <div class="person-photo ${photoClass}">${photoHtml}</div>
+      <div class="person-info">
+        <h1>${p.name}</h1>
+        ${englishName ? `<h2>${englishName}</h2>` : ''}
+
+        <div class="person-facts">
+          ${role ? `<div class="fact"><div class="fact-label">직업</div><div class="fact-value">${role}</div></div>` : ''}
+          ${bd ? `<div class="fact"><div class="fact-label">생년월일</div><div class="fact-value">${p.birthday} (${age}세)</div></div>` : ''}
+          ${p.place_of_birth ? `<div class="fact"><div class="fact-label">출생지</div><div class="fact-value">${p.place_of_birth}</div></div>` : ''}
+          ${films.length ? `<div class="fact"><div class="fact-label">출연작</div><div class="fact-value">${p.movie_credits.cast.length}편</div></div>` : ''}
+        </div>
+
+        <div class="bio-head">
+          <span class="bio-label" id="bioLabel">📖 소개</span>
+          <button class="bio-toggle" id="bioToggle" style="display:none;" onclick="toggleBio()">🇺🇸 영어 원문</button>
+        </div>
+        <div class="bio" id="bioBox">${bioText}</div>
+      </div>
+    </div>
+
+    ${films.length ? `
+      <div class="section-title">
+        🎬 대표작 <span class="count">${films.length}</span>
+        <span style="font-size:11px;color:var(--dim);font-weight:normal;">· 클릭하면 상세 정보</span>
+        <span class="sort-tabs">
+          <button class="sort-tab ${filmSort === 'rating' ? 'active' : ''}" onclick="setFilmSort('rating')">⭐ 평점순</button>
+          <button class="sort-tab ${filmSort === 'date' ? 'active' : ''}" onclick="setFilmSort('date')">🗓️ 최신순</button>
+        </span>
+      </div>
+      <div class="grid" id="filmGrid">
+        ${films.map((f, i) => movieCardHtml(f, i)).join("")}
+      </div>
+    ` : `
+      <div class="empty">
+        <div class="emoji">🎬</div>
+        <h2>필모그래피 정보가 없어요</h2>
+      </div>
+    `}
+  `;
+
+  // 영어 소개면 한국어로 번역해서 보여준다
+  if (p._bioIsEnglish && p.biography) translateBio(p.biography);
+}
+
+// ============================================================
+// 🔃 대표작 정렬 (평점순 / 최신순)
+// ============================================================
+let filmSort = "date";       // 대표작 정렬 기준 (기본: 최신순)
+let personFilms = [];        // 지금 보고 있는 인물의 작품 목록(정렬 전)
+let similarSort = "date";    // 비슷한 영화 정렬 기준 (기본: 최신순)
+let similarMovies = [];      // 지금 보고 있는 영화의 '비슷한 영화' 목록(정렬 전)
+
+function sortFilms(list, mode) {
+  const copy = [...list];    // 원본은 그대로 두고 복사본을 정렬한다
+  if (mode === "date") {
+    copy.sort((a, b) => (b.release_date || "").localeCompare(a.release_date || ""));
+  } else {
+    copy.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
+  }
+  return copy.slice(0, 12);  // 너무 많으면 12편까지만
+}
+
+// 비슷한 영화만 다시 정렬해서 그린다 (영화 정보는 그대로)
+function setSimilarSort(mode) {
+  similarSort = mode;
+  document.querySelectorAll(".similar-grid").forEach(() => {});   // (그리드는 아래에서 다시 그린다)
+
+  // 버튼 색 바꾸기 — '비슷한 영화' 제목 줄에 있는 버튼만 고른다
+  const grid = document.getElementById("similarGrid");
+  if (!grid) return;
+  const tabs = grid.previousElementSibling ? grid.previousElementSibling.querySelectorAll(".sort-tab") : [];
+  tabs.forEach(btn => {
+    btn.classList.toggle("active", btn.textContent.includes(mode === "rating" ? "평점" : "최신"));
+  });
+
+  grid.innerHTML = sortFilms(similarMovies, similarSort)
+    .slice(0, 8).map((s, i) => movieCardHtml(s, i)).join("");
+}
+
+function setFilmSort(mode) {
+  filmSort = mode;
+  // 버튼 색 바꾸기
+  document.querySelectorAll(".sort-tab").forEach(btn => {
+    btn.classList.toggle("active", btn.textContent.includes(mode === "rating" ? "평점" : "최신"));
+  });
+  // 목록만 다시 그린다 (사진·소개는 그대로)
+  const grid = document.getElementById("filmGrid");
+  if (grid) {
+    grid.innerHTML = sortFilms(personFilms, filmSort)
+      .map((f, i) => movieCardHtml(f, i)).join("");
+  }
+}
+
+// ============================================================
+// 🌐 소개 번역 (구글 번역 → 실패하면 MyMemory)
+//   한 번 번역한 글은 localStorage에 저장해 다시 부르지 않는다
+// ============================================================
+const BIO_CACHE_KEY = "movieBioCache";
+
+function bioCacheGet(key) {
+  try { return (JSON.parse(localStorage.getItem(BIO_CACHE_KEY) || "{}"))[key] || null; }
+  catch { return null; }
+}
+function bioCacheSet(key, value) {
+  try {
+    const c = JSON.parse(localStorage.getItem(BIO_CACHE_KEY) || "{}");
+    c[key] = value;
+    const keys = Object.keys(c);
+    if (keys.length > 60) delete c[keys[0]];
+    localStorage.setItem(BIO_CACHE_KEY, JSON.stringify(c));
+  } catch {}
+}
+function bioKey(text) {
+  let h = 0;
+  for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) | 0;
+  return "b" + h;
+}
+
+// 긴 글은 문장 단위로 잘라서 보낸다 (URL 길이 제한 때문)
+function splitText(text, limit) {
+  const parts = [];
+  let buf = "";
+  for (const s of text.split(/(?<=[.!?])\s+/)) {
+    if (buf && (buf + s).length > limit) { parts.push(buf); buf = ""; }
+    buf += s + " ";
+  }
+  if (buf.trim()) parts.push(buf.trim());
+  return parts;
+}
+
+async function transByGoogle(text) {
+  const out = [];
+  for (const chunk of splitText(text, 1200)) {
+    const res = await fetch("https://translate.googleapis.com/translate_a/single"
+      + "?client=gtx&sl=en&tl=ko&dt=t&q=" + encodeURIComponent(chunk));
+    if (!res.ok) throw new Error("google " + res.status);
+    const data = await res.json();
+    out.push(data[0].map(p => p[0]).join(""));
+  }
+  return out.join(" ");
+}
+
+async function transByMyMemory(text) {
+  const out = [];
+  for (const chunk of splitText(text, 450)) {
+    const res = await fetch("https://api.mymemory.translated.net/get?langpair=en|ko&q="
+      + encodeURIComponent(chunk));
+    if (!res.ok) throw new Error("mymemory " + res.status);
+    const data = await res.json();
+    out.push(data.responseData.translatedText);
+  }
+  return out.join(" ");
+}
+
+let bioKorean = "";
+let bioEnglish = "";
+let bioShowingKo = true;
+
+async function translateBio(englishText) {
+  const box = document.getElementById("bioBox");
+  const btn = document.getElementById("bioToggle");
+  const label = document.getElementById("bioLabel");
+  if (!box) return;
+
+  bioEnglish = englishText;
+  bioShowingKo = true;
+  const key = bioKey(englishText);
+
+  const cached = bioCacheGet(key);
+  if (cached) {
+    bioKorean = cached;
+    label.textContent = "📖 소개 (한글 번역)";
+    box.textContent = bioKorean;
+    btn.style.display = "";
+    return;
+  }
+
+  label.textContent = "📖 소개";
+  box.textContent = "한국어로 번역하는 중...";
+
+  try {
+    bioKorean = await transByGoogle(englishText);
+  } catch {
+    try { bioKorean = await transByMyMemory(englishText); }
+    catch {
+      // 번역 실패 → 영어 원문 그대로
+      box.textContent = englishText;
+      label.textContent = "📖 소개 (영어 원문)";
+      return;
+    }
+  }
+  bioCacheSet(key, bioKorean);
+
+  // 그 사이 다른 인물로 넘어갔으면 덮어쓰지 않는다
+  if (document.getElementById("bioBox") !== box) return;
+  box.textContent = bioKorean;
+  label.textContent = "📖 소개 (한글 번역)";
+  btn.style.display = "";
+}
+
+function toggleBio() {
+  const box = document.getElementById("bioBox");
+  const btn = document.getElementById("bioToggle");
+  const label = document.getElementById("bioLabel");
+  bioShowingKo = !bioShowingKo;
+  box.textContent = bioShowingKo ? bioKorean : bioEnglish;
+  label.textContent = bioShowingKo ? "📖 소개 (한글 번역)" : "📖 소개 (영어 원문)";
+  btn.textContent = bioShowingKo ? "🇺🇸 영어 원문" : "🇰🇷 한글 번역";
+}
+
+// ============================================================
+// 시작!
+// ============================================================
+init();
+@@END_SCRIPT_TAG@@>
+
+</body>
+</html>
+</script>
+<script type="text/plain" id="src-nasa"><!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌌 우주 사진 갤러리 · NASA APOD</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0e27;
+    --bg-mid: #12152E;
+    --bg-lift: #1B1E3A;
+    --card: #242950;
+    --card-hi: #2E3460;
+    --text: #FFFFFF;
+    --off: #E8EAF6;
+    --muted: #A8AED1;
+    --dim: #6A6F95;
+    --purple: #7C6AFF;
+    --purple-lt: #9F90FF;
+    --teal: #5EEAD4;
+    --yellow: #F5D547;
+    --pink: #FF6B9D;
+    --orange: #FFA75E;
+    --coral: #FF7A7A;
+  }
+
+  body {
+    font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* 배경 별 애니메이션 */
+  .stars {
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, white, transparent),
+      radial-gradient(1px 1px at 60% 70%, white, transparent),
+      radial-gradient(2px 2px at 50% 20%, white, transparent),
+      radial-gradient(1px 1px at 80% 40%, white, transparent),
+      radial-gradient(2px 2px at 30% 80%, white, transparent),
+      radial-gradient(1px 1px at 90% 15%, white, transparent),
+      radial-gradient(1px 1px at 15% 60%, white, transparent),
+      radial-gradient(2px 2px at 75% 85%, white, transparent);
+    background-size: 200px 200px;
+    background-repeat: repeat;
+    opacity: 0.35;
+    animation: twinkle 8s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.25; }
+    50% { opacity: 0.5; }
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  header {
+    text-align: center;
+    padding: 30px 0;
+  }
+  header h1 {
+    cursor: pointer;
+    font-size: 40px;
+    background: linear-gradient(90deg, var(--teal), var(--purple-lt), var(--pink));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+    font-weight: 900;
+  }
+  header .sub {
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  /* ============ 컨트롤 패널 ============ */
+  .controls {
+    background: var(--card);
+    border: 1px solid var(--card-hi);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    gap: 16px;
+    align-items: center;
+  }
+  .date-picker {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .date-picker label {
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .date-picker input {
+    background: var(--bg-lift);
+    border: 1.5px solid var(--purple);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 8px 12px;
+    font-family: inherit;
+    font-size: 13px;
+    outline: none;
+    color-scheme: dark;
+  }
+
+  .nav-buttons {
+    display: flex;
+    gap: 6px;
+  }
+  .nav-buttons button {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--bg-lift);
+    border: 1px solid var(--card-hi);
+    color: var(--off);
+    cursor: pointer;
+    font-size: 14px;
+    transition: 0.15s;
+  }
+  .nav-buttons button:hover {
+    background: var(--purple);
+    border-color: var(--purple);
+    transform: scale(1.1);
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+  .btn {
+    padding: 8px 16px;
+    background: var(--bg-lift);
+    border: 1.5px solid;
+    border-radius: 8px;
+    color: var(--off);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: bold;
+    transition: 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.3); }
+  .btn-today    { border-color: var(--teal);   color: var(--teal); }
+  .btn-birthday { border-color: var(--pink);   color: var(--pink); }
+  .btn-random   { border-color: var(--yellow); color: var(--yellow); }
+  .btn-week     { border-color: var(--purple-lt); color: var(--purple-lt); }
+
+  /* ============ 메인 사진 ============ */
+  .main-photo {
+    background: var(--card);
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 24px;
+    border: 1px solid var(--card-hi);
+    animation: fadeIn 0.5s;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .photo-wrap {
+    position: relative;
+    background: black;
+    text-align: center;
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  /* 즐겨찾기 감상 모드: 사진 좌우 꺽쇠 */
+  .nav-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 48px;
+    height: 68px;
+    border: none;
+    border-radius: 10px;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(6px);
+    color: #fff;
+    font-size: 26px;
+    line-height: 1;
+    cursor: pointer;
+    transition: 0.15s;
+    z-index: 4;
+  }
+  .nav-arrow:hover { background: rgba(0,0,0,0.8); transform: translateY(-50%) scale(1.08); }
+  .nav-arrow.prev { left: 10px; }
+  .nav-arrow.next { right: 10px; }
+
+  /* 지금 몇 번째 즐겨찾기를 보고 있는지 */
+  .fav-pos {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(6px);
+    color: var(--off);
+    font-size: 12px;
+    font-weight: bold;
+    padding: 5px 14px;
+    border-radius: 999px;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .fav-pos button {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 11px;
+    cursor: pointer;
+    padding: 0;
+  }
+  .fav-pos button:hover { color: var(--text); }
+
+  .photo-wrap img {
+    max-width: 100%;
+    max-height: 600px;
+    display: block;
+  }
+  /* 영상인 날: 미리보기 그림 + 재생 버튼 (클릭하면 유튜브로) */
+  .apod-video {
+    width: 100%;
+    max-height: 70vh;
+    display: block;
+    background: #000;
+  }
+  .video-card {
+    position: relative;
+    width: 100%;
+    cursor: pointer;
+    display: block;
+  }
+  .video-card img { width: 100%; display: block; }
+  .video-card .play {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 84px; height: 60px;
+    background: rgba(220, 30, 30, 0.92);
+    border-radius: 14px;
+    color: #fff;
+    font-size: 27px;
+    display: flex; align-items: center; justify-content: center;
+    transition: 0.15s;
+  }
+  .video-card:hover .play { background: #ff0000; transform: translate(-50%,-50%) scale(1.1); }
+  .video-note {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    background: rgba(10,14,39,0.85);
+    color: var(--off);
+    font-size: 12px;
+    text-align: center;
+    padding: 8px 12px;
+  }
+  .video-fallback {
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--muted);
+  }
+
+  .photo-wrap iframe {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: none;
+  }
+  .favorite-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(10px);
+    border: none;
+    color: var(--muted);
+    font-size: 20px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .favorite-btn:hover { transform: scale(1.15); }
+  .favorite-btn.active {
+    background: var(--pink);
+    color: white;
+    box-shadow: 0 0 20px rgba(255, 107, 157, 0.6);
+  }
+
+  .photo-info {
+    padding: 24px;
+  }
+  .photo-date {
+    color: var(--teal);
+    font-family: 'Consolas', monospace;
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+  .photo-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--text);
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+  .photo-copyright {
+    color: var(--yellow);
+    font-size: 12px;
+    margin-bottom: 14px;
+  }
+  .photo-desc {
+    color: var(--off);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  /* ============ 갤러리 ============ */
+  .gallery-section {
+    margin-top: 32px;
+  }
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    font-size: 18px;
+    color: var(--off);
+  }
+  .section-title .badge {
+    background: var(--purple);
+    color: white;
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 12px;
+  }
+
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+  }
+  .gallery-item {
+    aspect-ratio: 1;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    background: var(--card);
+    position: relative;
+    transition: 0.25s;
+    border: 1px solid var(--card-hi);
+  }
+  /* 카드 우상단 하트 */
+  .gallery-item .fav-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 3;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(10, 14, 39, 0.7);
+    color: #fff;
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    transition: 0.15s;
+    backdrop-filter: blur(3px);
+  }
+  .gallery-item .fav-btn:hover { background: rgba(10, 14, 39, 0.95); transform: scale(1.15); }
+
+  .gallery-item:hover {
+    transform: scale(1.05);
+    border-color: var(--teal);
+    box-shadow: 0 10px 24px rgba(94, 234, 212, 0.25);
+  }
+  .gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .gallery-date {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+    color: white;
+    padding: 20px 8px 6px;
+    font-size: 10px;
+    font-family: 'Consolas', monospace;
+    text-align: center;
+  }
+
+  /* ============ 즐겨찾기 ============ */
+  .favorites-section {
+    margin-top: 32px;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(255,107,157,0.1), rgba(124,106,255,0.1));
+    border-radius: 16px;
+    border: 1px solid rgba(255,107,157,0.3);
+  }
+  .favorites-empty {
+    text-align: center;
+    padding: 30px 20px;
+    color: var(--dim);
+    font-size: 13px;
+  }
+
+  /* 로딩 */
+  .loading, .error {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  .loading .spinner {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--card-hi);
+    border-top-color: var(--teal);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .demo-badge {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 5px 12px;
+    background: rgba(94, 234, 212, 0.15);
+    border: 1px solid var(--teal);
+    color: var(--teal);
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+  }
+
+  /* ============ 설명 번역 ============ */
+  .desc-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .desc-label {
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--teal);
+    letter-spacing: 0.03em;
+  }
+  .btn-trans {
+    padding: 5px 12px;
+    background: var(--bg-lift);
+    border: 1.5px solid var(--teal);
+    border-radius: 8px;
+    color: var(--teal);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: bold;
+    transition: 0.15s;
+    white-space: nowrap;
+  }
+  .btn-trans:hover { background: var(--card-hi); }
+  .desc-note {
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--dim);
+  }
+
+  /* 사진을 찾는 동안 잠기는 버튼들 */
+  .btn:disabled, .chip:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+  .chip:disabled:hover { background: var(--card); }
+
+  /* ============ 썸네일 격자 (카테고리 갤러리) ============ */
+  /* 사진을 크게 한 장씩 보는 대신, 작은 정사각형으로 촘촘히 늘어놓아
+     한 화면에 훨씬 많은 사진을 볼 수 있게 한다. */
+  .thumb-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: 8px;
+  }
+  .thumb-grid .gallery-item {
+    aspect-ratio: 1 / 1;        /* 정사각형 */
+    border-radius: 8px;
+  }
+  .thumb-grid .gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;          /* 정사각형에 꽉 차게 자른다 */
+  }
+  /* 작은 칸에서는 글자·버튼도 작게 (평소엔 숨기고 마우스 올릴 때만) */
+  .thumb-grid .gallery-date {
+    font-size: 9px;
+    padding: 3px 5px;
+    opacity: 0;
+    transition: 0.15s;
+  }
+  .thumb-grid .gallery-item:hover .gallery-date { opacity: 1; }
+  .thumb-grid .cat-tag {
+    top: 4px; left: 4px;
+    font-size: 8px;
+    padding: 2px 5px;
+    opacity: 0;
+    transition: 0.15s;
+  }
+  .thumb-grid .gallery-item:hover .cat-tag { opacity: 1; }
+  .thumb-grid .fav-btn {
+    top: 3px; right: 3px;
+    width: 22px; height: 22px;
+    font-size: 11px;
+  }
+
+  /* ============ 카테고리 ============ */
+  .cat-groups {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .cat-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-lift);
+    border: 1px solid var(--card-hi);
+    border-radius: 10px;
+    padding: 6px 10px;
+  }
+  .cat-group-label {
+    font-size: 10px;
+    color: var(--dim);
+    font-weight: bold;
+    margin-right: 2px;
+  }
+  .chip {
+    padding: 6px 12px;
+    background: var(--card);
+    border: 1.5px solid transparent;
+    border-radius: 999px;
+    color: var(--off);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: bold;
+    transition: 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .chip:hover { background: var(--card-hi); transform: translateY(-1px); }
+  .chip.active { background: var(--purple); border-color: var(--purple-lt); color: #fff; }
+  .chip .cnt {
+    font-size: 10px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 999px;
+    padding: 1px 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  .cat-tag {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(10,14,39,0.85);
+    color: var(--teal);
+    font-size: 10px;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 999px;
+    z-index: 2;
+  }
+  .cat-progress {
+    grid-column: 1/-1;
+    text-align: center;
+    padding: 30px 12px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.9;
+  }
+  .cat-progress .big {
+    display: block;
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--teal);
+    font-variant-numeric: tabular-nums;
+    margin-top: 6px;
+  }
+
+  .cat-empty {
+    grid-column: 1/-1;
+    text-align: center;
+    color: var(--muted);
+    padding: 30px 12px;
+    font-size: 13px;
+  }
+
+  @media (max-width: 700px) {
+    .controls {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .action-buttons { justify-content: flex-start; }
+    header h1 { font-size: 28px; }
+    .photo-title { font-size: 18px; }
+  }
+
+  footer {
+    text-align: center;
+    padding: 40px 0 20px;
+    color: var(--dim);
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+
+<div class="stars"></div>
+
+<div class="container">
+
+  <header>
+    <h1 onclick="goHome()" title="처음 화면으로">🌌 우주 사진 갤러리</h1>
+    <div class="sub">NASA가 매일 올리는 오늘의 우주 사진 · Astronomy Picture of the Day</div>
+    <div class="demo-badge">✨ DEMO_KEY로 바로 작동! (키 발급 불필요)</div>
+  </header>
+
+  <!-- ============ 컨트롤 패널 ============ -->
+  <div class="controls">
+    <div class="date-picker">
+      <label>📅</label>
+      <input type="date" id="dateInput" />
+    </div>
+
+    <div class="nav-buttons">
+      <button onclick="navigate(-1)" title="이전 날">◀</button>
+      <button onclick="navigate(1)" title="다음 날">▶</button>
+    </div>
+
+    <div class="action-buttons">
+      <button class="btn btn-today" onclick="loadToday()">📍 오늘</button>
+      <button class="btn btn-birthday" onclick="loadBirthday()">🎂 내 생일</button>
+      <button class="btn btn-random" onclick="loadRandom()">🎲 랜덤</button>
+      <button class="btn btn-week" onclick="loadWeekGallery()">🖼️ 이번주 갤러리</button>
+    </div>
+
+  </div>
+
+  <!-- ============ 메인 사진 ============ -->
+  <div id="mainPhoto" class="main-photo">
+    <div class="loading" id="mainLoading">
+      <div class="spinner"></div>
+      <div style="margin-top: 16px;">우주에서 사진 가져오는 중...</div>
+    </div>
+  </div>
+
+  <!-- ============ 갤러리 (이번주) ============ -->
+  <div id="gallerySection" class="gallery-section" style="display:none;">
+    <div class="section-title">
+      🖼️ 이번주 우주 갤러리 <span class="badge" id="galleryCount">7</span>
+    </div>
+    <div id="galleryGrid" class="gallery-grid"></div>
+  </div>
+
+  <!-- ============ 카테고리 탐색 ============ -->
+  <div class="gallery-section">
+    <div class="section-title">
+      🔭 카테고리로 찾아보기 <span class="badge" id="catPoolCount">0</span>
+      <span style="font-size:11px;color:var(--dim);font-weight:normal;">· 종류를 누르면 그 종류만 20장 찾아와요 · 아래로 갈수록 더 자세한 분류</span>
+    </div>
+
+    <div class="cat-groups">
+      <div class="cat-group">
+        <span class="cat-group-label">전체</span>
+        <button class="chip active" data-cat="all" onclick="selectCategory('all')">🌌 모두 <span class="cnt" id="cnt-all"></span></button>
+      </div>
+
+      <div class="cat-group">
+        <span class="cat-group-label">크게</span>
+        <button class="chip" data-cat="earth" onclick="selectCategory('earth')">🌍 지구·하늘 <span class="cnt" id="cnt-earth"></span></button>
+        <button class="chip" data-cat="solar" onclick="selectCategory('solar')">☀️ 태양계 <span class="cnt" id="cnt-solar"></span></button>
+        <button class="chip" data-cat="deep" onclick="selectCategory('deep')">✨ 딥스카이 <span class="cnt" id="cnt-deep"></span></button>
+        <button class="chip" data-cat="tech" onclick="selectCategory('tech')">🚀 탐사·기술 <span class="cnt" id="cnt-tech"></span></button>
+      </div>
+
+      <div class="cat-group">
+        <span class="cat-group-label">지구·하늘</span>
+        <button class="chip" data-cat="aurora" onclick="selectCategory('aurora')">🌈 오로라 <span class="cnt" id="cnt-aurora"></span></button>
+        <button class="chip" data-cat="atmos" onclick="selectCategory('atmos')">🌦️ 대기현상 <span class="cnt" id="cnt-atmos"></span></button>
+        <button class="chip" data-cat="nightscape" onclick="selectCategory('nightscape')">🏔️ 별하늘 풍경 <span class="cnt" id="cnt-nightscape"></span></button>
+      </div>
+
+      <div class="cat-group">
+        <span class="cat-group-label">태양계</span>
+        <button class="chip" data-cat="sun" onclick="selectCategory('sun')">☀️ 태양 <span class="cnt" id="cnt-sun"></span></button>
+        <button class="chip" data-cat="moon" onclick="selectCategory('moon')">🌙 달 <span class="cnt" id="cnt-moon"></span></button>
+        <button class="chip" data-cat="planet" onclick="selectCategory('planet')">🪐 행성 <span class="cnt" id="cnt-planet"></span></button>
+        <button class="chip" data-cat="comet" onclick="selectCategory('comet')">☄️ 혜성·유성 <span class="cnt" id="cnt-comet"></span></button>
+        <button class="chip" data-cat="eclipse" onclick="selectCategory('eclipse')">🌗 일식·월식 <span class="cnt" id="cnt-eclipse"></span></button>
+      </div>
+
+      <div class="cat-group">
+        <span class="cat-group-label">딥스카이</span>
+        <button class="chip" data-cat="galaxy" onclick="selectCategory('galaxy')">🌀 은하 <span class="cnt" id="cnt-galaxy"></span></button>
+        <button class="chip" data-cat="nebula" onclick="selectCategory('nebula')">☁️ 성운 <span class="cnt" id="cnt-nebula"></span></button>
+        <button class="chip" data-cat="cluster" onclick="selectCategory('cluster')">✨ 성단 <span class="cnt" id="cnt-cluster"></span></button>
+        <button class="chip" data-cat="star" onclick="selectCategory('star')">💫 별·항성 <span class="cnt" id="cnt-star"></span></button>
+        <button class="chip" data-cat="blackhole" onclick="selectCategory('blackhole')">🕳️ 블랙홀·퀘이사 <span class="cnt" id="cnt-blackhole"></span></button>
+      </div>
+
+      <div class="cat-group">
+        <span class="cat-group-label">은하 자세히</span>
+        <button class="chip" data-cat="spiral" onclick="selectCategory('spiral')">🌀 나선은하 <span class="cnt" id="cnt-spiral"></span></button>
+        <button class="chip" data-cat="galcluster" onclick="selectCategory('galcluster')">🕸️ 은하단 <span class="cnt" id="cnt-galcluster"></span></button>
+        <button class="chip" data-cat="galaxyEtc" onclick="selectCategory('galaxyEtc')">🌌 그 밖의 은하 <span class="cnt" id="cnt-galaxyEtc"></span></button>
+      </div>
+
+      <div class="cat-group">
+        <span class="cat-group-label">성운 자세히</span>
+        <button class="chip" data-cat="emission" onclick="selectCategory('emission')">🔴 발광성운 <span class="cnt" id="cnt-emission"></span></button>
+        <button class="chip" data-cat="planetary" onclick="selectCategory('planetary')">💍 행성상성운 <span class="cnt" id="cnt-planetary"></span></button>
+        <button class="chip" data-cat="snr" onclick="selectCategory('snr')">💥 초신성 잔해 <span class="cnt" id="cnt-snr"></span></button>
+        <button class="chip" data-cat="darkneb" onclick="selectCategory('darkneb')">⚫ 암흑성운 <span class="cnt" id="cnt-darkneb"></span></button>
+      </div>
+
+      <div class="cat-group">
+        <span class="cat-group-label">성단 자세히</span>
+        <button class="chip" data-cat="globular" onclick="selectCategory('globular')">🔵 구상성단 <span class="cnt" id="cnt-globular"></span></button>
+        <button class="chip" data-cat="open" onclick="selectCategory('open')">⭐ 산개성단 <span class="cnt" id="cnt-open"></span></button>
+      </div>
+
+      <div class="cat-group">
+        <span class="cat-group-label">탐사·기술</span>
+        <button class="chip" data-cat="rocket" onclick="selectCategory('rocket')">🚀 로켓·탐사선 <span class="cnt" id="cnt-rocket"></span></button>
+        <button class="chip" data-cat="telescope" onclick="selectCategory('telescope')">🔭 망원경·관측 <span class="cnt" id="cnt-telescope"></span></button>
+        <button class="chip" data-cat="station" onclick="selectCategory('station')">🛰️ 우주정거장 <span class="cnt" id="cnt-station"></span></button>
+      </div>
+    </div>
+
+    <div class="action-buttons" style="margin-bottom:14px;">
+      <button class="btn btn-random" id="catLoadBtn" onclick="loadCategoryPool(TARGET)">🎲 20장 가져오기</button>
+    </div>
+
+    <div id="catGrid" class="thumb-grid"></div>
+  </div>
+
+  <!-- ============ 즐겨찾기 ============ -->
+  <div class="favorites-section">
+    <div class="section-title">
+      ❤️ 내 즐겨찾기 <span class="badge" id="favCount">0</span>
+    </div>
+    <div id="favoritesGrid" class="gallery-grid">
+      <!-- 채워짐 -->
+    </div>
+    <div id="favoritesEmpty" class="favorites-empty">
+      마음에 드는 사진 위의 ❤️를 눌러 저장해보세요<br>
+      <small style="opacity: 0.6;">(8주차에 배울 localStorage 미리보기!)</small>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  이리고등학교 · 코딩 교육 2026 · 7주차 · 사진 by NASA APOD
+</footer>
+
+<script>
+// ============================================================
+// NASA APOD API
+// DEMO_KEY로 바로 사용 가능! (하루 30번 정도 호출 가능)
+// 더 많이 필요하면: https://api.nasa.gov 에서 무료 키 발급
+// ============================================================
+// 우리 반 전용 NASA API 키 (api.nasa.gov 에서 무료 발급 · 1시간에 4,000번까지)
+// DEMO_KEY는 인터넷(IP) 하나당 1시간 30번뿐이라 교실에서 금방 한도가 차서 이 키를 쓴다.
+const API_KEY = "HcigfcH8RP9KQIyO7w1MGwbhrqLclJkAdagTrvfA";
+
+function getApiKey() {
+  // 위에 적어둔 키를 그대로 쓴다 (키를 바꾸려면 API_KEY 한 줄만 고치면 됨)
+  return API_KEY;
+}
+
+// 응답을 확인해서, 한도 초과(429)면 무엇을 해야 하는지 알려준다
+async function callApod(params) {
+  const res = await fetch(`${BASE}?api_key=${getApiKey()}&${params}`);
+  if (res.status === 429) {
+    throw new Error("RATE_LIMIT");
+  }
+  if (!res.ok) throw new Error(`서버 응답 오류 (${res.status})`);
+  return await res.json();
+}
+const BASE = "https://api.nasa.gov/planetary/apod";
+
+let currentDate = todayString();
+let currentPhoto = null;
+
+// ============================================================
+// 유틸리티
+// ============================================================
+function todayString() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function daysBetween(dateStr, offset) {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + offset);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// ============================================================
+// 🔍 사진 하나 가져오기 (fetch!)
+// ============================================================
+async function fetchPhoto(date) {
+  return await callApod(`date=${date}`);
+}
+
+// 여러 날짜 한번에 가져오기 (start_date/end_date)
+async function fetchRange(startDate, endDate) {
+  return await callApod(`start_date=${startDate}&end_date=${endDate}`);
+}
+
+// 랜덤 여러 장 (count 파라미터)
+async function fetchRandomBatch(count) {
+  return await callApod(`count=${count}`);
+}
+
+// ============================================================
+// 🎬 화면에 표시
+// ============================================================
+async function loadDate(date) {
+  currentDate = date;
+  document.getElementById("dateInput").value = date;
+  document.getElementById("mainPhoto").innerHTML =
+    `<div class="loading"><div class="spinner"></div><div style="margin-top:16px;">우주에서 사진 가져오는 중...</div></div>`;
+
+  try {
+    const photo = await fetchPhoto(date);
+    currentPhoto = photo;
+    renderMain(photo);
+  } catch (err) {
+    document.getElementById("mainPhoto").innerHTML =
+      renderError(err);
+  }
+}
+
+function renderMain(photo) {
+  const isVideo = photo.media_type === "video";
+  const isFav = isFavorite(photo.date);
+
+  // 즐겨찾기 감상 모드면 좌우 꺽쇠와 위치 표시를 붙인다
+  syncFavIndex(photo.date);
+  const favs = getFavorites();
+  const favNav = (favViewIndex >= 0 && favs.length > 1) ? `
+      <button class="nav-arrow prev" onclick="moveFavorite(-1)" title="이전 즐겨찾기">‹</button>
+      <button class="nav-arrow next" onclick="moveFavorite(1)" title="다음 즐겨찾기">›</button>
+      <div class="fav-pos">
+        ❤️ ${favViewIndex + 1} / ${favs.length}
+        <button onclick="exitFavoriteView()" title="감상 모드 끄기">✕</button>
+      </div>` : "";
+
+  document.getElementById("mainPhoto").innerHTML = `
+    <div class="photo-wrap">
+      ${isVideo
+        ? videoCardHtml(photo)
+        : `<img src="${photo.hdurl || photo.url}" alt="${photo.title}">`}
+      <button class="favorite-btn ${isFav ? 'active' : ''}" onclick="toggleFavorite()">
+        ${isFav ? '❤️' : '🤍'}
+      </button>
+      ${favNav}
+    </div>
+    <div class="photo-info">
+      <div class="photo-date">${photo.date}</div>
+      <div class="photo-title">${photo.title}</div>
+      ${photo.copyright ? `<div class="photo-copyright">📸 ${photo.copyright}</div>` : ''}
+      <div class="desc-head">
+        <span class="desc-label" id="descLabel">📖 설명 (한글 번역)</span>
+        <button class="btn-trans" id="descToggle" onclick="toggleDesc()">🇺🇸 영어 원문 보기</button>
+      </div>
+      <div class="photo-desc" id="photoDesc">번역하는 중...</div>
+      <div class="desc-note" id="descNote"></div>
+    </div>
+  `;
+
+  // 설명을 한글로 번역해서 채운다 (원문은 토글로 볼 수 있음)
+  showTranslatedDesc(photo);
+}
+
+// 에러 화면 — 한도 초과일 때는 해결 방법까지 알려준다
+function renderError(err) {
+  const isLimit = err && err.message === "RATE_LIMIT";
+  document.getElementById("mainPhoto").innerHTML = isLimit
+    ? `<div class="error">
+         <div style="font-size:48px;">⏳</div>
+         <div style="margin-top:16px;">오늘 쓸 수 있는 횟수를 다 썼어요</div>
+         <div style="margin-top:10px; font-size:13px; line-height:1.8; opacity:0.85;">
+           우리 반 키는 <b>1시간에 4,000번</b>까지 쓸 수 있는데 그걸 다 썼어요.<br>
+           1시간쯤 뒤에 다시 되고, 급하면 새 키를 받아 아래 칸에 넣으면 돼요.
+         </div>
+         <div style="margin-top:14px;">
+           <a href="https://api.nasa.gov" target="_blank" style="color:var(--teal); font-size:13px;">
+             👉 api.nasa.gov 에서 무료 키 받기 (이메일만 입력)
+           </a>
+         </div>
+       </div>`
+    : `<div class="error">
+         <div style="font-size:48px;">⚠️</div>
+         <div style="margin-top:16px;">사진을 가져올 수 없어요</div>
+         <div style="margin-top:8px; font-size:12px; opacity:0.6;">${err.message}</div>
+       </div>`;
+}
+
+// ============================================================
+// 🏠 처음 화면으로 (제목을 누르면 실행)
+//   오늘 사진을 다시 불러오고 맨 위로 올라간다
+// ============================================================
+function goHome() {
+  loadToday();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// ============================================================
+// 🎬 영상인 날 (APOD는 가끔 사진 대신 영상을 올린다)
+//   파일로 연 페이지에서는 유튜브가 화면 안 재생을 막아서(오류 153),
+//   미리보기 그림을 보여주고 누르면 유튜브에서 열리게 한다.
+// ============================================================
+function youtubeId(url) {
+  const m = /(?:youtube\.com\/(?:embed\/|watch\?v=)|youtu\.be\/)([A-Za-z0-9_-]{6,})/.exec(url || "");
+  return m ? m[1] : "";
+}
+
+function videoCardHtml(photo) {
+  const url = photo.url || "";
+
+  // ① NASA가 직접 올린 영상 파일(mp4 등)이면 화면에서 바로 재생할 수 있다
+  if (/\.(mp4|webm|ogv)(\?|$)/i.test(url)) {
+    return `<video class="apod-video" controls playsinline poster="${photo.thumbnail_url || ""}">
+        <source src="${url}">
+        영상을 재생할 수 없어요. <a href="${url}" target="_blank">새 창에서 열기</a>
+      </video>`;
+  }
+
+  // ② 유튜브 영상이면 미리보기 그림 + 클릭하면 유튜브로
+  const id = youtubeId(url);
+  const link = id ? "https://www.youtube.com/watch?v=" + id : url;
+
+  if (!id) {
+    // 유튜브가 아닌 영상(비메오 등)
+    return `<div class="video-fallback">
+        <div style="font-size:52px;">🎬</div>
+        <div style="margin-top:14px;">오늘은 사진 대신 영상이에요</div>
+        <div style="margin-top:14px;">
+          <a href="${link}" target="_blank" style="color:var(--teal);font-weight:bold;">▶ 새 창에서 영상 보기</a>
+        </div>
+      </div>`;
+  }
+
+  return `<div class="video-card" onclick="window.open('${link}','_blank')" title="유튜브에서 보기">
+      <img src="https://img.youtube.com/vi/${id}/hqdefault.jpg" alt="${photo.title}">
+      <div class="play">▶</div>
+      <div class="video-note">🎬 오늘은 영상이에요 · 클릭하면 유튜브에서 열려요</div>
+    </div>`;
+}
+
+// ============================================================
+// 🎯 컨트롤 액션
+// ============================================================
+function loadToday() {
+  loadDate(todayString());
+}
+
+function navigate(offset) {
+  loadDate(daysBetween(currentDate, offset));
+}
+
+function loadBirthday() {
+  const saved = localStorage.getItem("myBirthday");
+  let birthday = saved || prompt("생일을 입력해주세요 (예: 2010-05-16)", "2010-05-16");
+  if (!birthday) return;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(birthday)) {
+    alert("YYYY-MM-DD 형식으로 입력해주세요!");
+    return;
+  }
+  // APOD는 1995-06-16부터
+  if (birthday < "1995-06-16") {
+    alert("APOD는 1995년 6월 16일부터 시작됐어요!");
+    return;
+  }
+  localStorage.setItem("myBirthday", birthday);
+  loadDate(birthday);
+}
+
+async function loadRandom() {
+  document.getElementById("mainPhoto").innerHTML =
+    `<div class="loading"><div class="spinner"></div><div style="margin-top:16px;">랜덤 우주 여행 중...</div></div>`;
+  try {
+    const [photo] = await fetchRandomBatch(1);
+    currentDate = photo.date;
+    document.getElementById("dateInput").value = photo.date;
+    currentPhoto = photo;
+    renderMain(photo);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function loadWeekGallery() {
+  const section = document.getElementById("gallerySection");
+  const grid = document.getElementById("galleryGrid");
+  section.style.display = "block";
+  section.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  grid.innerHTML = '<div class="loading" style="grid-column:1/-1;"><div class="spinner"></div></div>';
+
+  try {
+    const end = todayString();
+    const start = daysBetween(end, -6);
+    const photos = await fetchRange(start, end);
+
+    grid.innerHTML = photos.reverse().map(p => galleryCardHtml(p)).join("");
+    document.getElementById("galleryCount").textContent = photos.length;
+  } catch (err) {
+    grid.innerHTML = `<div class="error" style="grid-column:1/-1;">갤러리를 불러올 수 없어요</div>`;
+  }
+}
+
+// 날짜 선택기 변경
+document.getElementById("dateInput").addEventListener("change", (e) => {
+  loadDate(e.target.value);
+});
+
+// ============================================================
+// ⬅️➡️ 즐겨찾기 감상 모드
+//   즐겨찾기 사진을 눌러서 크게 볼 때, 좌우 꺽쇠로 다음/이전 사진으로 넘어간다
+// ============================================================
+let favViewIndex = -1;    // -1 이면 감상 모드가 아님
+
+// 즐겨찾기 목록에서 사진을 열 때 호출
+function openFavorite(date) {
+  const favs = getFavorites();
+  favViewIndex = favs.findIndex(f => f.date === date);
+  loadDate(date);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// 꺽쇠로 이동 (offset: -1 이전, +1 다음)
+function moveFavorite(offset) {
+  const favs = getFavorites();
+  if (favs.length === 0) return;
+  favViewIndex = (favViewIndex + offset + favs.length) % favs.length;   // 끝에서 처음으로 이어진다
+  loadDate(favs[favViewIndex].date);
+}
+
+function exitFavoriteView() {
+  favViewIndex = -1;
+  if (currentPhoto) renderMain(currentPhoto);
+}
+
+// 지금 보는 사진이 즐겨찾기 몇 번째인지 다시 맞춘다
+// (감상 중에 즐겨찾기를 빼면 순서가 바뀌므로)
+function syncFavIndex(date) {
+  if (favViewIndex < 0) return;
+  const favs = getFavorites();
+  const i = favs.findIndex(f => f.date === date);
+  favViewIndex = i;                 // 목록에서 빠졌으면 -1 이 되어 감상 모드가 꺼진다
+}
+
+// ============================================================
+// ❤️ 즐겨찾기 (localStorage 미리보기)
+// ============================================================
+function getFavorites() {
+  try {
+    return JSON.parse(localStorage.getItem("nasaFavorites") || "[]");
+  } catch { return []; }
+}
+
+function isFavorite(date) {
+  return getFavorites().some(f => f.date === date);
+}
+
+function toggleFavorite() {
+  if (!currentPhoto) return;
+  toggleFavByDate(currentPhoto.date);
+}
+
+// 화면에 보이는 사진들을 날짜로 찾아 쓰기 위한 목록
+// (하트 버튼이 카드 정보를 직접 들고 있지 않아도 되게 한다)
+const photoIndex = {};
+function rememberPhoto(p) {
+  photoIndex[p.date] = {
+    date: p.date, title: p.title, url: p.url,
+    media_type: p.media_type || "image",
+  };
+}
+
+// 어느 화면에서든 하트를 누르면 이 함수 하나로 처리한다
+function toggleFavByDate(date) {
+  let favs = getFavorites();
+  const idx = favs.findIndex(f => f.date === date);
+  if (idx >= 0) {
+    favs.splice(idx, 1);
+  } else {
+    const p = photoIndex[date] || (currentPhoto && currentPhoto.date === date ? currentPhoto : null);
+    if (!p) return;
+    favs.unshift({ date: p.date, title: p.title, url: p.url, media_type: p.media_type });
+    if (favs.length > 20) favs = favs.slice(0, 20);
+  }
+  localStorage.setItem("nasaFavorites", JSON.stringify(favs));
+
+  if (currentPhoto) renderMain(currentPhoto);
+  renderFavorites();
+  renderCategoryGrid();
+}
+
+// 갤러리 카드 한 장의 HTML (하트 포함) — 여러 곳에서 같이 쓴다
+function galleryCardHtml(p, extraTag, isFavList) {
+  rememberPhoto(p);
+  const fav = isFavorite(p.date);
+  const media = (p.media_type === "image" || !p.media_type)
+    ? `<img src="${p.url}" alt="${p.title}" loading="lazy" decoding="async">`
+    : `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:32px;">🎬</div>`;
+  return `
+    <div class="gallery-item" onclick="${isFavList ? `openFavorite('${p.date}')` : `loadDate('${p.date}'); window.scrollTo({top:0,behavior:'smooth'})`};">
+      ${extraTag || ""}
+      <button class="fav-btn" title="${fav ? '즐겨찾기 빼기' : '즐겨찾기에 담기'}"
+              onclick="event.stopPropagation(); toggleFavByDate('${p.date}');">${fav ? "❤️" : "🤍"}</button>
+      ${media}
+      <div class="gallery-date">${p.date}</div>
+    </div>`;
+}
+
+function renderFavorites() {
+  const favs = getFavorites();
+  const grid = document.getElementById("favoritesGrid");
+  const emptyBox = document.getElementById("favoritesEmpty");
+  document.getElementById("favCount").textContent = favs.length;
+
+  if (favs.length === 0) {
+    grid.innerHTML = "";
+    emptyBox.style.display = "block";
+    return;
+  }
+  emptyBox.style.display = "none";
+  // 즐겨찾기 카드는 '감상 모드'로 연다 (좌우 꺽쇠가 생긴다)
+  grid.innerHTML = favs.map(f => galleryCardHtml(f, "", true)).join("");
+}
+
+
+// ============================================================
+// 🌐 한글 번역 (fetch 두 번째 활용!)
+//   - 구글 번역 무료 엔드포인트를 먼저 쓰고, 실패하면 MyMemory로 재시도
+//   - 한 번 번역한 건 localStorage에 저장해서 두 번 부르지 않는다
+// ============================================================
+const TRANS_CACHE_KEY = "nasaTransCache";
+
+function getTransCache() {
+  try { return JSON.parse(localStorage.getItem(TRANS_CACHE_KEY) || "{}"); }
+  catch { return {}; }
+}
+
+function saveTransCache(key, value) {
+  const cache = getTransCache();
+  cache[key] = value;
+  // 너무 커지지 않게 최근 60개만 유지
+  const keys = Object.keys(cache);
+  if (keys.length > 60) delete cache[keys[0]];
+  localStorage.setItem(TRANS_CACHE_KEY, JSON.stringify(cache));
+}
+
+// 1순위: 구글 번역 (키 불필요, 긴 글도 한 번에)
+async function translateByGoogle(text) {
+  const url = "https://translate.googleapis.com/translate_a/single"
+            + "?client=gtx&sl=en&tl=ko&dt=t&q=" + encodeURIComponent(text);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("google " + res.status);
+  const data = await res.json();
+  // 응답이 [[[번역, 원문, ...], [...]], ...] 모양이라 첫 조각들을 이어붙인다
+  return data[0].map(part => part[0]).join("");
+}
+
+// 2순위: MyMemory (한 번에 500자 제한이라 문장 단위로 잘라서 보냄)
+async function translateByMyMemory(text) {
+  const chunks = [];
+  let buf = "";
+  for (const sentence of text.split(/(?<=[.!?])\s+/)) {
+    if ((buf + sentence).length > 450) { chunks.push(buf); buf = ""; }
+    buf += sentence + " ";
+  }
+  if (buf.trim()) chunks.push(buf);
+
+  const out = [];
+  for (const chunk of chunks) {
+    const url = "https://api.mymemory.translated.net/get?langpair=en|ko&q=" + encodeURIComponent(chunk);
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("mymemory " + res.status);
+    const data = await res.json();
+    out.push(data.responseData.translatedText);
+  }
+  return out.join(" ");
+}
+
+async function translateToKorean(text, cacheKey) {
+  if (!text) return "";
+  const cache = getTransCache();
+  if (cacheKey && cache[cacheKey]) return cache[cacheKey];
+
+  let result = null;
+  try {
+    result = await translateByGoogle(text);
+  } catch (e1) {
+    try {
+      result = await translateByMyMemory(text);
+    } catch (e2) {
+      throw new Error("번역 서비스에 연결하지 못했어요");
+    }
+  }
+  if (cacheKey && result) saveTransCache(cacheKey, result);
+  return result;
+}
+
+// ============================================================
+// 📖 설명 영역: 번역본 ↔ 원문 토글
+// ============================================================
+let descKorean = "";     // 번역된 설명
+let descEnglish = "";    // 원래 영어 설명
+let descShowingKo = true;
+
+async function showTranslatedDesc(photo) {
+  const box = document.getElementById("photoDesc");
+  const note = document.getElementById("descNote");
+  const btn = document.getElementById("descToggle");
+  if (!box) return;
+
+  descEnglish = photo.explanation || "";
+  descKorean = "";
+  descShowingKo = true;
+  box.textContent = "번역하는 중...";
+  note.textContent = "";
+
+  try {
+    descKorean = await translateToKorean(descEnglish, photo.date);
+    // 사용자가 그 사이 다른 날짜로 넘어갔으면 덮어쓰지 않는다
+    if (!currentPhoto || currentPhoto.date !== photo.date) return;
+    box.textContent = descKorean;
+    note.textContent = "자동 번역이라 어색한 부분이 있을 수 있어요. 원문과 비교해보세요!";
+  } catch (err) {
+    if (!currentPhoto || currentPhoto.date !== photo.date) return;
+    descShowingKo = false;
+    box.textContent = descEnglish;
+    document.getElementById("descLabel").textContent = "📖 설명 (영어 원문)";
+    btn.textContent = "🔄 번역 다시 시도";
+    btn.setAttribute("onclick", "retryTranslate()");
+    note.textContent = "⚠️ " + err.message;
+  }
+}
+
+function toggleDesc() {
+  const box = document.getElementById("photoDesc");
+  const label = document.getElementById("descLabel");
+  const btn = document.getElementById("descToggle");
+
+  descShowingKo = !descShowingKo;
+  box.textContent = descShowingKo ? descKorean : descEnglish;
+  label.textContent = descShowingKo ? "📖 설명 (한글 번역)" : "📖 설명 (영어 원문)";
+  btn.textContent = descShowingKo ? "🇺🇸 영어 원문 보기" : "🇰🇷 한글 번역 보기";
+}
+
+function retryTranslate() {
+  const btn = document.getElementById("descToggle");
+  btn.textContent = "🇺🇸 영어 원문 보기";
+  btn.setAttribute("onclick", "toggleDesc()");
+  document.getElementById("descLabel").textContent = "📖 설명 (한글 번역)";
+  if (currentPhoto) showTranslatedDesc(currentPhoto);
+}
+
+// ============================================================
+// 🔭 천체 분류 체계
+//   APOD에는 "이 사진은 무엇이다" 하는 분류 정보가 없다.
+//   그래서 제목·설명에 나오는 낱말로 우리가 직접 분류한다.
+//
+//   구조는 천문학에서 쓰는 방식을 따라 3단계로 나눴다.
+//     지구·하늘 ─ 오로라 / 대기현상 / 별하늘 풍경
+//     태양계   ─ 태양 / 달 / 행성 / 혜성·유성 / 일식·월식
+//     딥스카이 ─ 은하(나선은하·은하단) / 성운(발광·행성상·초신성잔해·암흑)
+//                / 성단(구상·산개) / 별 / 블랙홀·퀘이사
+//     탐사·기술 ─ 로켓·탐사선 / 망원경 / 우주정거장
+// ============================================================
+
+// 각 분류의 이름과, 한 단계 위 분류(parent)
+const TAXONOMY = {
+  // ── 지구·하늘 ──
+  aurora:    { label: "🌈 오로라",        parent: "earth" },
+  atmos:     { label: "🌦️ 대기현상",      parent: "earth" },
+  nightscape:{ label: "🏔️ 별하늘 풍경",   parent: "earth" },
+
+  // ── 태양계 ──
+  sun:       { label: "☀️ 태양",          parent: "solar" },
+  moon:      { label: "🌙 달",            parent: "solar" },
+  planet:    { label: "🪐 행성",          parent: "solar" },
+  comet:     { label: "☄️ 혜성·유성",     parent: "solar" },
+  eclipse:   { label: "🌗 일식·월식",     parent: "solar" },
+
+  // ── 딥스카이: 은하 ──
+  spiral:    { label: "🌀 나선은하",      parent: "galaxy" },
+  galcluster:{ label: "🕸️ 은하단",        parent: "galaxy" },
+  galaxyEtc: { label: "🌌 그 밖의 은하",  parent: "galaxy" },
+
+  // ── 딥스카이: 성운 ──
+  emission:  { label: "🔴 발광성운",      parent: "nebula" },
+  planetary: { label: "💍 행성상성운",    parent: "nebula" },
+  snr:       { label: "💥 초신성 잔해",   parent: "nebula" },
+  darkneb:   { label: "⚫ 암흑성운",      parent: "nebula" },
+
+  // ── 딥스카이: 성단 ──
+  globular:  { label: "🔵 구상성단",      parent: "cluster" },
+  open:      { label: "⭐ 산개성단",      parent: "cluster" },
+
+  // ── 딥스카이: 그 밖 ──
+  star:      { label: "💫 별·항성",       parent: "deep" },
+  blackhole: { label: "🕳️ 블랙홀·퀘이사", parent: "deep" },
+
+  // ── 탐사·기술 ──
+  rocket:    { label: "🚀 로켓·탐사선",   parent: "tech" },
+  telescope: { label: "🔭 망원경·관측",   parent: "tech" },
+  station:   { label: "🛰️ 우주정거장",    parent: "tech" },
+
+  // 어디에도 안 걸린 사진
+  other:     { label: "❔ 그 밖",         parent: null },
+};
+
+// 묶음(중간 단계) 이름
+const GROUP_LABELS = {
+  all:     "🌌 모두",
+  earth:   "🌍 지구·하늘",
+  solar:   "☀️ 태양계",
+  deep:    "✨ 딥스카이",
+  tech:    "🚀 탐사·기술",
+  galaxy:  "🌀 은하",
+  nebula:  "☁️ 성운",
+  cluster: "✨ 성단",
+};
+
+// 묶음이 어디에 속하는지 (딥스카이 > 은하 > 나선은하 …)
+const GROUP_PARENT = { galaxy: "deep", nebula: "deep", cluster: "deep" };
+
+// ============================================================
+// 분류를 판단할 낱말들 (APOD 글이 영어라 영어 낱말로 찾는다)
+//   앞쪽 분류일수록 더 구체적 → 점수가 같으면 구체적인 쪽이 이긴다
+// ============================================================
+const CLASS_WORDS = {
+  // 태양계 (구체적인 이름이 많아 먼저 본다)
+  eclipse:   ["eclipse", "totality", "annular", "occultation", "transit of"],
+  moon:      ["moon", "lunar", "crescent", "moonrise", "moonset", "supermoon", "apollo landing site"],
+  sun:       ["sun ", "solar ", "sunspot", "prominence", "chromosphere", "solar flare",
+              "coronal", "solar corona", "photosphere", "sunrise on"],
+  planet:    ["mars", "venus", "jupiter", "saturn", "mercury", "uranus", "neptune", "pluto",
+              "planet ", "rover", "curiosity", "perseverance", "io ", "europa", "titan",
+              "enceladus", "martian", "jovian", "rings of"],
+  comet:     ["comet", "meteor", "meteor shower", "perseid", "geminid", "leonid",
+              "asteroid", "fireball", "bolide", "zodiacal"],
+
+  // 딥스카이 — 성운
+  planetary: ["planetary nebula", "ring nebula", "helix nebula", "dumbbell", "cat's eye"],
+  snr:       ["supernova", "remnant", "crab nebula", "veil nebula", "cassiopeia a", "sn 1987"],
+  darkneb:   ["dark nebula", "molecular cloud", "dust cloud", "globule", "coalsack", "horsehead"],
+  emission:  ["emission nebula", "h ii", "star-forming", "star forming", "stellar nursery",
+              "pillars", "orion nebula", "lagoon nebula", "eagle nebula", "carina nebula",
+              "nebula", "nebulae"],
+
+  // 딥스카이 — 성단
+  globular:  ["globular cluster", "globular", "omega centauri", "m13", "47 tucanae"],
+  open:      ["open cluster", "star cluster", "pleiades", "hyades", "double cluster", "beehive"],
+
+  // 딥스카이 — 은하
+  galcluster:["galaxy cluster", "cluster of galaxies", "abell ", "galaxy group", "gravitational lens"],
+  spiral:    ["spiral galaxy", "spiral", "barred spiral", "andromeda galaxy", "whirlpool",
+              "pinwheel", "sombrero"],
+  galaxyEtc: ["galaxy", "galaxies", "elliptical", "irregular galaxy", "magellanic",
+              "andromeda", "interacting"],
+
+  // 딥스카이 — 그 밖
+  blackhole: ["black hole", "quasar", "event horizon", "active galactic", "blazar", "accretion disk"],
+  star:      ["star ", "stellar", "binary star", "variable star", "red giant", "white dwarf",
+              "protostar", "betelgeuse", "sirius", "constellation", "star field", "starfield"],
+
+  // 탐사·기술
+  station:   ["space station", "iss ", "astronaut", "spacewalk", "cosmonaut", "tiangong"],
+  telescope: ["telescope", "hubble", "webb", "jwst", "observatory", "radio dish", "vlt ", "alma "],
+  rocket:    ["rocket", "launch", "spacecraft", "probe", "artemis", "spacex", "falcon",
+              "lander", "booster", "liftoff", "mission to"],
+
+  // 지구·하늘
+  aurora:    ["aurora", "borealis", "australis", "northern lights", "southern lights"],
+  atmos:     ["rainbow", "halo", "lightning", "noctilucent", "airglow", "sprite", "green flash",
+              "thunderstorm", "cloudscape", "fog", "atmospheric"],
+  nightscape:["milky way", "landscape", "mountain", "desert", "lake", "coast", "horizon",
+              "panorama", "silhouette", "tree", "sea ", "island", "volcano", "night sky over"],
+};
+
+// ============================================================
+// 사진 하나를 분류한다 (가장 점수가 높은 분류를 고른다)
+// ============================================================
+function classifyPhoto(photo) {
+  const text = ((photo.title || "") + " " + (photo.explanation || "")).toLowerCase();
+  const title = (photo.title || "").toLowerCase();
+
+  let best = "other";
+  let bestScore = 0;
+
+  for (const key of Object.keys(CLASS_WORDS)) {
+    let score = 0;
+    for (const w of CLASS_WORDS[key]) {
+      if (text.includes(w)) score += 1;
+      if (title.includes(w)) score += 3;   // 제목에 나오면 훨씬 중요하게 본다
+    }
+    if (score > bestScore) { bestScore = score; best = key; }
+  }
+  return best;
+}
+
+// 어떤 분류(cat)에 이 사진(leaf)이 속하는지 — 위 단계까지 거슬러 올라가며 확인
+function matchesCategory(cat, leaf) {
+  if (cat === "all") return true;
+  if (!leaf) return false;
+  if (cat === leaf) return true;
+
+  // leaf → 부모 → 그 부모 … 로 올라가며 cat과 같은지 본다
+  let node = TAXONOMY[leaf] ? TAXONOMY[leaf].parent : null;
+  while (node) {
+    if (node === cat) return true;
+    node = GROUP_PARENT[node] || null;
+  }
+  return false;
+}
+
+// 카드에 붙일 이름
+const CATEGORY_LABELS = new Proxy({}, {
+  get: (_, key) => (TAXONOMY[key] ? TAXONOMY[key].label : (GROUP_LABELS[key] || "❔")),
+});
+
+// ============================================================
+// 🖼️ 카테고리 갤러리
+//   APOD API에는 '이 종류만 주세요' 같은 기능이 없다.
+//   그래서 랜덤으로 사진을 계속 받아보면서, 우리가 만든 분류(classifyPhoto)로
+//   골라내 TARGET장을 채운다. 흔한 종류는 금방 차고, 드문 종류는 오래 걸린다.
+// ============================================================
+const CAT_POOL_KEY = "nasaCatPool";
+const TARGET = 20;         // 한 번에 모을 사진 수 (이 숫자만 바꾸면 전부 따라 바뀐다)
+const BATCH = 40;          // 한 묶음에 받아오는 사진 수
+const PARALLEL = 4;        // 한 번에 동시에 요청할 묶음 수 (Promise.all — 훨씬 빠르다!)
+const MAX_TRIES = 6;       // 최대 시도 횟수 (6 × 4묶음 × 40장 = 최대 960장까지 훑는다)
+
+let catPool = loadPoolFromStorage();   // 지금 보여주고 있는 사진들
+let currentCategory = "all";
+let isLoadingPool = false;             // 찾는 중에 또 누르는 것 방지
+
+// 사진을 찾는 동안에는 버튼·카테고리 칩을 눌러도 반응하지 않게 잠근다
+// (여러 번 누르면 요청이 겹쳐서 엉뚱한 결과가 나올 수 있다)
+function lockCategoryControls(locked) {
+  const btn = document.getElementById("catLoadBtn");
+  if (btn) {
+    btn.disabled = locked;
+    btn.textContent = locked ? "⏳ 찾는 중..." : `🎲 ${TARGET}장 가져오기`;
+  }
+  document.querySelectorAll(".chip").forEach(c => { c.disabled = locked; });
+}
+
+function loadPoolFromStorage() {
+  try { return JSON.parse(localStorage.getItem(CAT_POOL_KEY) || "[]"); }
+  catch { return []; }
+}
+
+function savePoolToStorage() {
+  try { localStorage.setItem(CAT_POOL_KEY, JSON.stringify(catPool)); } catch {}
+}
+
+// 카테고리를 고르면 그 종류 사진으로 새로 채운다
+function selectCategory(cat) {
+  if (isLoadingPool) return;
+  currentCategory = cat;
+  document.querySelectorAll(".chip").forEach(c => {
+    c.classList.toggle("active", c.dataset.cat === cat);
+  });
+  loadCategoryPool(TARGET);
+}
+
+/**
+ * 지금 고른 카테고리에 맞는 사진을 target장 모은다.
+ * 기존 사진은 지우고, 서로 겹치지 않는 새 사진으로 채운다.
+ */
+async function loadCategoryPool(target) {
+  if (isLoadingPool) return;
+  isLoadingPool = true;
+  lockCategoryControls(true);
+
+  const cat = currentCategory;
+  const label = GROUP_LABELS[cat] || CATEGORY_LABELS[cat] || "";
+  const grid = document.getElementById("catGrid");
+
+  const seen = new Set(catPool.map(p => p.date));   // 직전에 보여준 사진은 제외
+  const fresh = [];
+  let scanned = 0;
+
+  const showProgress = (tries) => {
+    grid.innerHTML = `
+      <div class="cat-progress">
+        <div class="spinner" style="margin:0 auto 10px;"></div>
+        ${label} 사진을 찾는 중...
+        <span class="big">${fresh.length} / ${target}장</span>
+        <span style="font-size:11px;color:var(--dim);">사진 ${scanned}장 확인 · ${tries}번째 시도<br>드문 종류는 조금 오래 걸려요</span>
+      </div>`;
+  };
+  showProgress(1);
+
+  try {
+    let emptyRounds = 0;   // 새로 건진 게 하나도 없었던 횟수
+    for (let t = 1; t <= MAX_TRIES && fresh.length < target; t++) {
+      const before = fresh.length;
+
+      // 🚀 묶음 여러 개를 동시에 요청 (하나씩 기다리면 몇 배 더 오래 걸린다)
+      const results = await Promise.all(
+        Array.from({ length: PARALLEL }, () => fetchRandomBatch(BATCH))
+      );
+      if (!results.every(Array.isArray)) throw new Error("rate");   // 한도 초과면 에러 객체가 온다
+      const photos = results.flat();
+
+      for (const p of photos) {
+        if (fresh.length >= target) break;
+        if (p.media_type !== "image") continue;   // 영상은 제외
+        if (seen.has(p.date)) continue;           // 이미 본 사진(중복) 제외
+        seen.add(p.date);
+        scanned++;
+
+        const c = classifyPhoto(p);
+        if (!matchesCategory(cat, c)) continue;   // 고른 종류가 아니면 버린다
+        fresh.push({ date: p.date, title: p.title, url: p.url, _cat: c });
+      }
+      showProgress(t);
+
+      // 세 번 연속 한 장도 못 건지면 그만 찾는다 (그만큼 드문 종류)
+      emptyRounds = (fresh.length === before) ? emptyRounds + 1 : 0;
+      if (emptyRounds >= 3) break;
+    }
+
+    catPool = fresh;          // 기존 사진은 버리고 새로 찾은 사진으로 교체
+    lastScanned = scanned;
+    savePoolToStorage();
+    renderCategoryGrid();
+  } catch (err) {
+    grid.innerHTML = `<div class="cat-empty">
+        😢 사진을 가져오지 못했어요<br>
+        <span style="font-size:12px;">잠시 뒤에 다시 눌러보세요.<br>
+        (우리 반 키는 1시간에 4,000번까지 쓸 수 있어요)</span>
+      </div>`;
+  } finally {
+    isLoadingPool = false;
+    lockCategoryControls(false);
+  }
+}
+
+let lastScanned = 0;   // 마지막으로 훑어본 사진 수 (안내 문구용)
+
+function renderCategoryGrid() {
+  const grid = document.getElementById("catGrid");
+
+  // 개수는 지금 고른 카테고리에만 표시한다 (지금 목록이 그 종류로만 채워져 있으므로)
+  ["all", ...Object.keys(GROUP_LABELS), ...Object.keys(TAXONOMY)].forEach(c => {
+    const el = document.getElementById("cnt-" + c);
+    if (el) el.textContent = (c === currentCategory) ? catPool.length : "";
+  });
+  document.getElementById("catPoolCount").textContent = catPool.length;
+
+  if (catPool.length === 0) {
+    grid.innerHTML = `<div class="cat-empty">아직 모은 사진이 없어요<br>위에서 보고 싶은 종류를 누르거나 [🎲 ${TARGET}장 가져오기]를 눌러보세요!</div>`;
+    return;
+  }
+
+  const short = catPool.length < TARGET && lastScanned > 0
+    ? `<div class="cat-empty" style="grid-column:1/-1;padding:14px;">
+         사진 ${lastScanned}장을 훑어서 ${catPool.length}장을 찾았어요.
+         이 종류는 드물어요 — [🎲 ${TARGET}장 가져오기]를 다시 누르면 더 찾아봐요!
+       </div>`
+    : "";
+
+  grid.innerHTML = catPool.map(p =>
+    galleryCardHtml(p, `<span class="cat-tag">${CATEGORY_LABELS[p._cat]}</span>`)
+  ).join("") + short;
+}
+
+// 감상 모드에서는 키보드 ← → 로도 넘길 수 있다
+document.addEventListener("keydown", (e) => {
+  if (favViewIndex < 0) return;
+  if (e.key === "ArrowLeft")  moveFavorite(-1);
+  if (e.key === "ArrowRight") moveFavorite(1);
+  if (e.key === "Escape")     exitFavoriteView();
+});
+
+// ============================================================
+// 시작!
+// ============================================================
+document.getElementById("dateInput").value = currentDate;
+loadToday();
+renderFavorites();
+renderCategoryGrid();   // 저장해둔 카테고리 사진이 있으면 바로 보여준다
+@@END_SCRIPT_TAG@@>
+
+</body>
+</html>
+</script>
+<script type="text/plain" id="src-animal"><!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🦉 명탐정 부엉즈 · 동물 추리 사무소</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* 스크롤 막대를 숨긴다 — 마우스 휠·터치로 넘기는 건 그대로 된다
+     (질문이 많아지면서 오른쪽에 생기던 막대가 눈에 걸리지 않게) */
+  html, body, .result .desc {
+    scrollbar-width: none;        /* 파이어폭스 */
+    -ms-overflow-style: none;     /* 옛 엣지 */
+  }
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar,
+  .result .desc::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;                /* 크롬·엣지·사파리 */
+  }
+
+  /* 기록만은 스크롤바를 보여준다 — 위에 더 있다는 걸 알 수 있게 */
+  .q-log { scrollbar-width: thin; scrollbar-color: var(--purple-lt) var(--bg-deep); }
+  .q-log::-webkit-scrollbar { width: 8px; }
+  .q-log::-webkit-scrollbar-track { background: var(--bg-deep); border-radius: 4px; }
+  .q-log::-webkit-scrollbar-thumb {
+    background: var(--purple-lt);
+    border-radius: 4px;
+  }
+  .q-log::-webkit-scrollbar-thumb:hover { background: var(--purple); }
+
+  :root {
+    --bg: #1B1E3A;
+    --bg-deep: #12152E;
+    --bg-lift: #232746;
+    --card: #242950;
+    --card-hi: #2E3460;
+    --text: #FFFFFF;
+    --off: #E8EAF6;
+    --muted: #A8AED1;
+    --dim: #6A6F95;
+    --purple: #7C6AFF;
+    --purple-lt: #9F90FF;
+    --teal: #5EEAD4;
+    --yellow: #F5D547;
+    --pink: #FF6B9D;
+    --orange: #FFA75E;
+    --coral: #FF7A7A;
+    --green: #7FD27F;
+  }
+
+  body {
+    font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+    background:
+      radial-gradient(ellipse at top left, rgba(124,106,255,0.15), transparent 50%),
+      radial-gradient(ellipse at bottom right, rgba(94,234,212,0.12), transparent 50%),
+      var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .container { max-width: 1000px; margin: 0 auto; }
+
+  header {
+    text-align: center;
+    padding: 10px 0 24px;
+  }
+  header h1 {
+    cursor: pointer;
+    font-size: 32px;
+    background: linear-gradient(90deg, var(--teal), var(--purple-lt));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+  header .sub { color: var(--muted); font-size: 13px; }
+
+  /* ============ 점수판 ============ */
+  .scoreboard {
+    display: flex;
+    justify-content: center;
+    gap: 26px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .score-item { text-align: center; }
+  .score-item .num {
+    font-size: 24px;
+    font-weight: bold;
+    font-variant-numeric: tabular-nums;
+    display: block;
+  }
+  .score-item .label { font-size: 11px; color: var(--dim); }
+
+  /* ============ 게임판 ============ */
+  .board {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 22px;
+  }
+
+  /* 사진 (가려진 상태) */
+  .photo-box {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: var(--bg-deep);
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--card-hi);
+  }
+  .photo-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    /* 처음엔 아주 흐리고 어둡게 → 질문할수록 또렷해진다 */
+    filter: blur(30px) brightness(0.38) saturate(0.3);
+    transform: scale(1.1);          /* 흐림 때문에 가장자리가 비는 걸 막는다 */
+    transition: filter 0.8s ease, transform 0.8s ease;
+  }
+  /* 사진을 덮는 타일들 (하나씩 벗겨진다) */
+  .tiles {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+  }
+  .tile {
+    background: var(--card);
+    border: 1px solid rgba(0,0,0,0.25);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .tile.off { opacity: 0; transform: scale(0.7); }
+
+  /* 축포가 그려질 투명한 판 — 사진 위에 겹쳐 놓는다 */
+  .confetti {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;   /* 클릭은 그대로 사진에 전달된다 */
+  }
+
+  /* 정답을 맞힌 순간 사진이 살짝 튀어오르며 빛난다 */
+  @keyframes win-pop {
+    0%   { transform: scale(1);    box-shadow: 0 0 0 0 rgba(94,234,212,0.7); }
+    40%  { transform: scale(1.04); box-shadow: 0 0 0 14px rgba(94,234,212,0); }
+    100% { transform: scale(1);    box-shadow: 0 0 0 0 rgba(94,234,212,0); }
+  }
+  .photo-box.win { animation: win-pop 0.9s ease-out; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .photo-box.win { animation: none; }
+  }
+
+  .photo-caption {
+    text-align: center;
+    font-size: 12px;
+    color: var(--dim);
+    margin-top: 10px;
+    min-height: 18px;
+  }
+
+  /* ============ 질문 ============ */
+  .panel {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 16px 18px;
+  }
+  .panel h2 {
+    font-size: 15px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .panel .hint {
+    font-size: 11px;
+    color: var(--dim);
+    margin-bottom: 8px;
+  }
+
+  .q-list {
+    display: grid;
+    /* 한 묶음(4개)이 한 줄에 들어가도록 — 줄 수가 줄어 마지막 질문까지 한눈에 보인다 */
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  @media (max-width: 1100px) {
+    .q-list { grid-template-columns: repeat(2, 1fr); }
+  }
+  .q-btn {
+    padding: 8px 10px;
+    line-height: 1.35;
+    background: var(--bg-deep);
+    border: 1px solid var(--card-hi);
+    border-radius: 10px;
+    color: var(--off);
+    font-family: inherit;
+    font-size: 11.5px;
+    text-align: left;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+  .q-btn:hover:not(:disabled) { border-color: var(--purple-lt); transform: translateY(-2px); }
+  .q-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* 질문 묶음 제목 */
+  .q-group-title {
+    font-size: 10.5px;
+    font-weight: bold;
+    color: var(--teal);
+    margin: 9px 0 4px;
+    letter-spacing: 0.03em;
+  }
+  .q-group-title:first-child { margin-top: 0; }
+
+  /* 질문한 내역 */
+  .log-panel {
+    margin-top: 14px;
+    background: var(--card);
+    border-radius: 14px;
+    padding: 14px 16px;
+  }
+  .log-title {
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--teal);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .log-title span {
+    background: var(--bg-deep);
+    color: var(--muted);
+    border-radius: 999px;
+    padding: 1px 8px;
+    font-size: 11px;
+  }
+  .log-empty {
+    font-size: 12px;
+    color: var(--dim);
+    line-height: 1.7;
+    text-align: center;
+    padding: 10px 0;
+  }
+  .q-log { max-height: 268px; overflow-y: auto; padding-right: 6px; }   /* 6개쯤 보이는 높이 */
+  .q-log-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    background: var(--bg-deep);
+    border-radius: 8px;
+    margin-bottom: 6px;
+    font-size: 12.5px;
+  }
+  .ans {
+    flex-shrink: 0;
+    font-weight: bold;
+    font-size: 12px;
+    padding: 2px 9px;
+    border-radius: 999px;
+  }
+  .q-log-item .fact {
+    display: block;
+    color: var(--yellow);
+    font-size: 11.5px;
+    margin-top: 3px;
+  }
+  .ans.yes { background: rgba(127,210,127,0.18); color: var(--green); }
+  .ans.no  { background: rgba(255,122,122,0.18); color: var(--coral); }
+
+  /* ============ 정답 고르기 ============ */
+  .answer-area { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--card-hi); }
+  .answer-area h2 { margin-bottom: 8px; flex-wrap: wrap; }
+  .inline-hint { font-size: 10.5px; color: var(--dim); font-weight: normal; }
+  .choices {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);   /* 보기 10개 = 두 줄 */
+    gap: 6px;
+  }
+  @media (max-width: 1100px) {
+    .choices { grid-template-columns: repeat(4, 1fr); }
+  }
+  .choice-btn {
+    padding: 8px 4px;
+    line-height: 1.2;
+    background: var(--bg-deep);
+    border: 1.5px solid var(--card-hi);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+  .choice-btn:hover:not(:disabled) { background: var(--purple); border-color: var(--purple); }
+  .choice-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .choice-btn.wrong { background: rgba(255,122,122,0.2); border-color: var(--coral); color: var(--coral); }
+
+  /* ============ 결과 ============ */
+  .result {
+    margin-top: 18px;
+    padding: 18px;
+    background: var(--bg-deep);
+    border-radius: 12px;
+    border-left: 4px solid var(--teal);
+  }
+  .result h3 { font-size: 18px; margin-bottom: 6px; }
+  .result .desc {
+    font-size: 13px;
+    line-height: 1.75;
+    color: var(--off);
+    max-height: 160px;
+    overflow-y: auto;
+    margin-top: 8px;
+  }
+  .result .src { font-size: 11px; color: var(--dim); margin-top: 8px; }
+
+  .btn {
+    padding: 12px 22px;
+    border-radius: 10px;
+    border: none;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+  .btn-main {
+    background: linear-gradient(90deg, var(--teal), var(--purple-lt));
+    color: #10132b;
+    width: 100%;
+    margin-top: 14px;
+  }
+  .btn-main:hover { transform: translateY(-2px); }
+
+  /* 스크롤을 내려도 늘 보이는 남은 질문 표시 */
+  .hud {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: rgba(18, 21, 46, 0.92);
+    border: 1.5px solid var(--purple-lt);
+    border-radius: 999px;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    font-size: 13px;
+    font-weight: bold;
+  }
+  .hud .hud-num {
+    font-size: 20px;
+    font-variant-numeric: tabular-nums;
+    color: var(--teal);
+  }
+  .hud.low  { border-color: var(--orange); }
+  .hud.low  .hud-num { color: var(--orange); }
+  .hud.none { border-color: var(--coral); }
+  .hud.none .hud-num { color: var(--coral); }
+  .hud .hud-sub { color: var(--dim); font-size: 11px; font-weight: normal; }
+  .hud .hud-top {
+    background: none; border: none; color: var(--muted);
+    font-size: 15px; cursor: pointer; padding: 0 2px;
+  }
+  .hud .hud-top:hover { color: var(--text); }
+  @media (max-width: 600px) {
+    .hud { right: 10px; bottom: 10px; padding: 8px 12px; }
+  }
+
+  .loading { text-align: center; padding: 40px 20px; color: var(--muted); }
+  .spinner {
+    width: 34px; height: 34px;
+    border: 3px solid var(--card-hi);
+    border-top-color: var(--teal);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+    margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  footer {
+    text-align: center;
+    color: var(--dim);
+    font-size: 12px;
+    padding: 30px 0 10px;
+  }
+
+  @media (max-width: 820px) {
+    .board { grid-template-columns: 1fr; }
+    .photo-box { max-width: 380px; margin: 0 auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <h1 onclick="location.reload()" title="처음부터 다시 시작하기">🦉 명탐정 부엉즈</h1>
+    <div class="sub">어둠 속 목격자를 찾아라! 질문을 던질수록 사진이 벗겨집니다 · 적은 질문으로 맞힐수록 높은 점수</div>
+  </header>
+
+  <div class="scoreboard">
+    <div class="score-item"><span class="num" id="scoreNow" style="color:var(--teal)">0</span><span class="label">이번 점수</span></div>
+    <div class="score-item"><span class="num" id="scoreBest" style="color:var(--yellow)">0</span><span class="label">최고 점수</span></div>
+    <div class="score-item"><span class="num" id="streak" style="color:var(--pink)">0</span><span class="label">연속 정답</span></div>
+    <div class="score-item"><span class="num" id="played">0</span><span class="label">푼 문제</span></div>
+  </div>
+
+  <div class="board">
+    <!-- 왼쪽: 가려진 사진 -->
+    <div>
+      <div class="photo-box" id="photoBox">
+        <div class="loading" id="photoLoading">
+          <div class="spinner"></div>
+          <div>동물을 데려오는 중...</div>
+        </div>
+      </div>
+      <div class="photo-caption" id="photoCaption"></div>
+
+      <!-- 질문에 대한 답을 사진 바로 아래에서 본다 -->
+      <div class="log-panel">
+        <div class="log-title">📋 지금까지 알아낸 것 <span id="logCount">0</span></div>
+        <div class="q-log" id="qLog"></div>
+        <div class="log-empty" id="logEmpty">아직 질문하지 않았어요.<br>오른쪽에서 질문을 눌러보세요!</div>
+      </div>
+    </div>
+
+    <!-- 오른쪽: 질문과 정답 -->
+    <div class="panel">
+      <h2>❓ 질문하기 <span style="font-size:12px;color:var(--dim);font-weight:normal;">남은 질문 <b id="qLeft" style="color:var(--teal)">6</b>개</span></h2>
+      <div class="hint">질문 하나에 사진이 조금씩 드러나요. 아낄수록 점수가 높아요!</div>
+
+      <div id="qList"></div>
+
+      <div class="answer-area">
+        <h2>🎯 정답 고르기 <span class="inline-hint">확신이 서면 눌러보세요 · 틀리면 질문 1개를 잃어요</span></h2>
+        <div class="choices" id="choices"></div>
+      </div>
+
+      <div id="resultBox"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 스크롤해도 늘 보이는 남은 질문 표시 -->
+<div class="hud" id="hud">
+  <span>❓ 남은 질문</span>
+  <span class="hud-num" id="hudLeft">6</span>
+  <span class="hud-sub" id="hudScore"></span>
+  <button class="hud-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="맨 위로">⬆</button>
+</div>
+
+<footer>
+  명탐정 부엉즈 · 이리고등학교 코딩 교육 2026 · 7주차 응용 · 사진·설명 by 위키백과
+</footer>
+
+<script>
+// ============================================================
+// 🐾 동물 도감 (40종)
+//   사진과 설명은 위키백과에서 가져오고(fetch!),
+//   아래 특징들은 우리가 직접 정리해 둔 자료다.
+//
+//   wiki : 위키백과 문서 제목        legs : 다리 수 (날개는 다리로 세지 않음)
+//   cls  : 분류                      ears : 쫑긋한 겉귀가 보이는지
+//   tail : 꼬리                      horns: 뿔
+//   fur  : 털   feather: 깃털        scale: 비늘
+//   wings: 날개  flies : 날 수 있음  swim : 헤엄칠 수 있음
+//   eggs : 알을 낳음                 bone : 등뼈(척추)가 있음
+//   night: 주로 밤에 활동            meat : 고기를 먹음   plant: 풀·열매를 먹음
+//   group: 무리 지어 삶              korea: 한국 야생에서 볼 수 있음
+//   tame : 집·농장에서 기름          big  : 어른 사람보다 큼
+// ============================================================
+const ANIMALS = [
+  // ── 포유류 ──
+  { name:"개",     wiki:"개",        cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:0,meat:1,plant:1,group:1,korea:0,tame:1,big:0 },
+  { name:"고양이", wiki:"고양이",    cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:0,eggs:0,bone:1,night:1,meat:1,plant:0,group:0,korea:0,tame:1,big:0 },
+  { name:"여우",   wiki:"여우",      cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:1,meat:1,plant:1,group:0,korea:1,tame:0,big:0 },
+  { name:"늑대",   wiki:"늑대",      cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:1,meat:1,plant:0,group:1,korea:1,tame:0,big:0 },
+  { name:"호랑이", wiki:"호랑이",    cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:1,meat:1,plant:0,group:0,korea:1,tame:0,big:1 },
+  { name:"사자",   wiki:"사자",      cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:1,meat:1,plant:0,group:1,korea:0,tame:0,big:1 },
+  { name:"곰",     wiki:"곰",        cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:0,meat:1,plant:1,group:0,korea:1,tame:0,big:1 },
+  { name:"토끼",   wiki:"토끼",      cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:0,eggs:0,bone:1,night:1,meat:0,plant:1,group:1,korea:1,tame:1,big:0 },
+  { name:"다람쥐", wiki:"다람쥐",    cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:0,eggs:0,bone:1,night:0,meat:0,plant:1,group:0,korea:1,tame:0,big:0 },
+  { name:"고슴도치",wiki:"고슴도치", cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:1,meat:1,plant:1,group:0,korea:1,tame:1,big:0 },
+  { name:"박쥐",   wiki:"박쥐",      cls:"포유류", legs:2, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:1,flies:1,swim:0,eggs:0,bone:1,night:1,meat:1,plant:1,group:1,korea:1,tame:0,big:0 },
+  { name:"말",     wiki:"말_(동물)", cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:0,meat:0,plant:1,group:1,korea:0,tame:1,big:1 },
+  { name:"소",     wiki:"소",        cls:"포유류", legs:4, ears:1,tail:1,horns:1,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:0,meat:0,plant:1,group:1,korea:0,tame:1,big:1 },
+  { name:"돼지",   wiki:"돼지",      cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:0,meat:1,plant:1,group:1,korea:1,tame:1,big:0 },
+  { name:"양",     wiki:"양",        cls:"포유류", legs:4, ears:1,tail:1,horns:1,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:0,meat:0,plant:1,group:1,korea:0,tame:1,big:0 },
+  { name:"사슴",   wiki:"사슴",      cls:"포유류", legs:4, ears:1,tail:1,horns:1,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:0,meat:0,plant:1,group:1,korea:1,tame:0,big:0 },
+  { name:"기린",   wiki:"기린",      cls:"포유류", legs:4, ears:1,tail:1,horns:1,fur:1,feather:0,scale:0,wings:0,flies:0,swim:0,eggs:0,bone:1,night:0,meat:0,plant:1,group:1,korea:0,tame:0,big:1 },
+  { name:"얼룩말", wiki:"얼룩말",    cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:0,meat:0,plant:1,group:1,korea:0,tame:0,big:1 },
+  { name:"코끼리", wiki:"코끼리",    cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:0,meat:0,plant:1,group:1,korea:0,tame:0,big:1 },
+  { name:"하마",   wiki:"하마",      cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:1,meat:0,plant:1,group:1,korea:0,tame:0,big:1 },
+  { name:"낙타",   wiki:"낙타",      cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:0,eggs:0,bone:1,night:0,meat:0,plant:1,group:1,korea:0,tame:1,big:1 },
+  { name:"캥거루", wiki:"캥거루",    cls:"포유류", legs:2, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:1,meat:0,plant:1,group:1,korea:0,tame:0,big:0 },
+  { name:"원숭이", wiki:"원숭이",    cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:0,eggs:0,bone:1,night:0,meat:0,plant:1,group:1,korea:0,tame:0,big:0 },
+  { name:"돌고래", wiki:"돌고래",    cls:"포유류", legs:0, ears:0,tail:1,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:0,meat:1,plant:0,group:1,korea:1,tame:0,big:1 },
+  { name:"고래",   wiki:"고래",      cls:"포유류", legs:0, ears:0,tail:1,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:0,meat:1,plant:0,group:1,korea:1,tame:0,big:1 },
+  { name:"물개",   wiki:"물개",      cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:0,meat:1,plant:0,group:1,korea:1,tame:0,big:0 },
+
+  // ── 조류 ──
+  { name:"오리",   wiki:"오리",      cls:"조류",   legs:2, ears:0,tail:1,horns:0,fur:0,feather:1,scale:0,wings:1,flies:1,swim:1,eggs:1,bone:1,night:0,meat:1,plant:1,group:1,korea:1,tame:1,big:0 },
+  { name:"닭",     wiki:"닭",        cls:"조류",   legs:2, ears:0,tail:1,horns:0,fur:0,feather:1,scale:0,wings:1,flies:0,swim:0,eggs:1,bone:1,night:0,meat:1,plant:1,group:1,korea:0,tame:1,big:0 },
+  { name:"펭귄",   wiki:"펭귄",      cls:"조류",   legs:2, ears:0,tail:1,horns:0,fur:0,feather:1,scale:0,wings:1,flies:0,swim:1,eggs:1,bone:1,night:0,meat:1,plant:0,group:1,korea:0,tame:0,big:0 },
+  { name:"타조",   wiki:"타조",      cls:"조류",   legs:2, ears:0,tail:1,horns:0,fur:0,feather:1,scale:0,wings:1,flies:0,swim:0,eggs:1,bone:1,night:0,meat:1,plant:1,group:1,korea:0,tame:0,big:1 },
+  { name:"올빼미", wiki:"올빼미",    cls:"조류",   legs:2, ears:0,tail:1,horns:0,fur:0,feather:1,scale:0,wings:1,flies:1,swim:0,eggs:1,bone:1,night:1,meat:1,plant:0,group:0,korea:1,tame:0,big:0 },
+  { name:"독수리", wiki:"독수리",    cls:"조류",   legs:2, ears:0,tail:1,horns:0,fur:0,feather:1,scale:0,wings:1,flies:1,swim:0,eggs:1,bone:1,night:0,meat:1,plant:0,group:0,korea:1,tame:0,big:0 },
+  { name:"앵무새", wiki:"앵무새",    cls:"조류",   legs:2, ears:0,tail:1,horns:0,fur:0,feather:1,scale:0,wings:1,flies:1,swim:0,eggs:1,bone:1,night:0,meat:0,plant:1,group:1,korea:0,tame:1,big:0 },
+  { name:"까치",   wiki:"까치",      cls:"조류",   legs:2, ears:0,tail:1,horns:0,fur:0,feather:1,scale:0,wings:1,flies:1,swim:0,eggs:1,bone:1,night:0,meat:1,plant:1,group:1,korea:1,tame:0,big:0 },
+  { name:"참새",   wiki:"참새",      cls:"조류",   legs:2, ears:0,tail:1,horns:0,fur:0,feather:1,scale:0,wings:1,flies:1,swim:0,eggs:1,bone:1,night:0,meat:1,plant:1,group:1,korea:1,tame:0,big:0 },
+  { name:"기러기", wiki:"기러기",    cls:"조류",   legs:2, ears:0,tail:1,horns:0,fur:0,feather:1,scale:0,wings:1,flies:1,swim:1,eggs:1,bone:1,night:0,meat:0,plant:1,group:1,korea:1,tame:0,big:0 },
+
+  // ── 파충류 · 양서류 ──
+  { name:"뱀",     wiki:"뱀",        cls:"파충류", legs:0, ears:0,tail:1,horns:0,fur:0,feather:0,scale:1,wings:0,flies:0,swim:1,eggs:1,bone:1,night:1,meat:1,plant:0,group:0,korea:1,tame:0,big:0 },
+  { name:"거북",   wiki:"거북",      cls:"파충류", legs:4, ears:0,tail:1,horns:0,fur:0,feather:0,scale:1,wings:0,flies:0,swim:1,eggs:1,bone:1,night:0,meat:1,plant:1,group:0,korea:1,tame:1,big:0 },
+  { name:"악어",   wiki:"악어",      cls:"파충류", legs:4, ears:0,tail:1,horns:0,fur:0,feather:0,scale:1,wings:0,flies:0,swim:1,eggs:1,bone:1,night:1,meat:1,plant:0,group:0,korea:0,tame:0,big:1 },
+  { name:"도마뱀", wiki:"도마뱀",    cls:"파충류", legs:4, ears:0,tail:1,horns:0,fur:0,feather:0,scale:1,wings:0,flies:0,swim:0,eggs:1,bone:1,night:0,meat:1,plant:0,group:0,korea:1,tame:1,big:0 },
+  { name:"개구리", wiki:"개구리목",  cls:"양서류", legs:4, ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:1,bone:1,night:1,meat:1,plant:0,group:0,korea:1,tame:0,big:0 },
+
+  // ── 어류 ──
+  { name:"상어",   wiki:"상어",      cls:"어류",   legs:0, ears:0,tail:1,horns:0,fur:0,feather:0,scale:1,wings:0,flies:0,swim:1,eggs:1,bone:1,night:0,meat:1,plant:0,group:0,korea:1,tame:0,big:1 },
+  { name:"가오리", wiki:"가오리",    cls:"어류",   legs:0, ears:0,tail:1,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:1,bone:1,night:0,meat:1,plant:0,group:0,korea:1,tame:0,big:0 },
+  { name:"연어",   wiki:"연어",      cls:"어류",   legs:0, ears:0,tail:1,horns:0,fur:0,feather:0,scale:1,wings:0,flies:0,swim:1,eggs:1,bone:1,night:0,meat:1,plant:0,group:1,korea:1,tame:0,big:0 },
+  { name:"금붕어", wiki:"금붕어",    cls:"어류",   legs:0, ears:0,tail:1,horns:0,fur:0,feather:0,scale:1,wings:0,flies:0,swim:1,eggs:1,bone:1,night:0,meat:1,plant:1,group:1,korea:0,tame:1,big:0 },
+
+  // ── 곤충 ──
+  { name:"나비",   wiki:"나비",      cls:"곤충",   legs:6, ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:1,flies:1,swim:0,eggs:1,bone:0,night:0,meat:0,plant:1,group:0,korea:1,tame:0,big:0 },
+  { name:"꿀벌",   wiki:"꿀벌",      cls:"곤충",   legs:6, ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:1,flies:1,swim:0,eggs:1,bone:0,night:0,meat:0,plant:1,group:1,korea:1,tame:1,big:0 },
+  { name:"개미",   wiki:"개미",      cls:"곤충",   legs:6, ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:0,eggs:1,bone:0,night:0,meat:1,plant:1,group:1,korea:1,tame:0,big:0 },
+  { name:"잠자리", wiki:"잠자리",    cls:"곤충",   legs:6, ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:1,flies:1,swim:0,eggs:1,bone:0,night:0,meat:1,plant:0,group:0,korea:1,tame:0,big:0 },
+  { name:"사슴벌레",wiki:"사슴벌레", cls:"곤충",   legs:6, ears:0,tail:0,horns:1,fur:0,feather:0,scale:0,wings:1,flies:1,swim:0,eggs:1,bone:0,night:1,meat:0,plant:1,group:0,korea:1,tame:1,big:0 },
+  { name:"메뚜기", wiki:"메뚜기",    cls:"곤충",   legs:6, ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:1,flies:1,swim:0,eggs:1,bone:0,night:0,meat:0,plant:1,group:1,korea:1,tame:0,big:0 },
+  { name:"무당벌레",wiki:"무당벌레", cls:"곤충",   legs:6, ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:1,flies:1,swim:0,eggs:1,bone:0,night:0,meat:1,plant:0,group:0,korea:1,tame:0,big:0 },
+
+  // ── 그 밖의 무척추동물 ──
+  { name:"거미",   wiki:"거미",      cls:"거미류", legs:8, ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:0,eggs:1,bone:0,night:1,meat:1,plant:0,group:0,korea:1,tame:0,big:0 },
+  { name:"게",     wiki:"게",        cls:"갑각류", legs:10,ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:1,bone:0,night:0,meat:1,plant:1,group:0,korea:1,tame:0,big:0 },
+  { name:"새우",   wiki:"새우",      cls:"갑각류", legs:10,ears:0,tail:1,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:1,bone:0,night:1,meat:1,plant:1,group:1,korea:1,tame:0,big:0 },
+  { name:"문어",   wiki:"문어",      cls:"연체동물",legs:8,ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:1,bone:0,night:1,meat:1,plant:0,group:0,korea:1,tame:0,big:0 },
+  { name:"오징어", wiki:"오징어",    cls:"연체동물",legs:10,ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:1,bone:0,night:1,meat:1,plant:0,group:1,korea:1,tame:0,big:0 },
+  { name:"달팽이", wiki:"달팽이",    cls:"연체동물",legs:0,ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:0,eggs:1,bone:0,night:1,meat:0,plant:1,group:0,korea:1,tame:0,big:0 },
+  { name:"해파리", wiki:"해파리",    cls:"자포동물",legs:0,ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:1,bone:0,night:0,meat:1,plant:0,group:1,korea:1,tame:0,big:0 },
+  { name:"지렁이", wiki:"지렁이",    cls:"환형동물",legs:0,ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:0,eggs:1,bone:0,night:1,meat:0,plant:1,group:0,korea:1,tame:0,big:0 },
+];
+
+// 아래 특징들은 해당하는 동물이 적어서, 표 대신 이름 목록으로 붙인다.
+// (이렇게 하면 "달팽이와 지렁이" 처럼 헷갈리는 짝도 질문으로 구별할 수 있다)
+// 위키백과 대표 사진이 '여러 마리 모음(콜라주)'인 동물이 있다.
+// 그런 사진은 실루엣 게임에 맞지 않아서, 한 마리만 나오는 다른 문서의 사진을 쓴다.
+// (설명은 원래 문서 그대로 — 사진만 바꾼다)
+const PHOTO_FROM = {
+  "개":     "진돗개",        // 원래 사진: 여러 견종 털 비교
+  "고양이": "샴고양이",      // 원래 사진: 여러 고양이 포스터
+  "박쥐":   "관박쥐",        // 원래 사진: 여러 박쥐 그림 모음
+  "뱀":     "구렁이",        // 원래 사진: 여러 뱀 모음
+  "거미":   "타란툴라",      // 원래 사진: 여러 거미 모음
+};
+
+const TRAITS = {
+  shell: ["거북", "달팽이", "게", "새우"],        // 껍데기·등딱지가 있음
+  slim:  ["뱀", "지렁이", "잠자리", "연어"],      // 몸이 가늘고 길쭉함
+  huge:  ["고래"],                                 // 몸길이 10m 이상
+  bw:    ["까치", "얼룩말", "펭귄"],              // 몸이 검은색과 흰색
+  stripe:["호랑이", "얼룩말", "꿀벌"],            // 줄무늬가 있음
+};
+
+// ── 크기 (1: 손바닥 · 2: 고양이 · 3: 사람 · 4: 말·곰 · 5: 코끼리 이상) ──
+const SIZE_GROUP = {
+  1: ["나비","꿀벌","개미","잠자리","사슴벌레","메뚜기","무당벌레","거미","달팽이","지렁이","새우","참새","금붕어"],
+  2: ["고양이","토끼","다람쥐","고슴도치","박쥐","게","문어","오징어","해파리","까치","앵무새","도마뱀","개구리","오리","닭","여우"],
+  3: ["개","늑대","돼지","양","사슴","원숭이","펭귄","올빼미","독수리","기러기","거북","뱀","물개","연어","가오리","캥거루"],
+  4: ["말","소","낙타","곰","사자","호랑이","얼룩말","악어","상어","돌고래","타조"],
+  5: ["코끼리","기린","하마","고래"],
+};
+const SIZE_LABEL = { 1:"손바닥에 올릴 만큼 작습니다", 2:"고양이만 합니다", 3:"사람만 합니다",
+                     4:"사람보다 큽니다", 5:"아주 거대합니다" };
+
+// ── 빠르기 (3: 빠름 · 2: 보통 · 1: 느림) ──
+const SPEED_GROUP = {
+  3: ["말","얼룩말","사자","호랑이","늑대","여우","사슴","독수리","잠자리","돌고래","타조","상어","토끼","캥거루","참새","까치","박쥐"],
+  1: ["달팽이","지렁이","거북","해파리","고슴도치","하마"],
+};
+const SPEED_LABEL = { 3:"아주 빠르게 움직입니다", 2:"보통 빠르기입니다", 1:"아주 느리게 움직입니다" };
+
+// ── 사는 곳 (여러 곳일 수 있다) ──
+const HABITAT_GROUP = {
+  tree:  ["다람쥐","원숭이","앵무새","사슴벌레","올빼미","까치","참새","무당벌레","박쥐"],
+  water: ["돌고래","고래","상어","가오리","연어","금붕어","문어","오징어","해파리","게","새우","개구리","물개","펭귄","거북","하마","오리","기러기"],
+  under: ["지렁이","개미"],
+  sky:   ["독수리","기러기","잠자리","나비","꿀벌","박쥐","까치","참새","앵무새","메뚜기","무당벌레"],
+};
+const HABITAT_LABEL = { tree:"나무 위", water:"물속·물가", under:"땅속", sky:"하늘", ground:"땅 위" };
+
+// ── 몸 색 (여러 색일 수 있다) ──
+const COLOR_GROUP = {
+  brown: ["개","여우","다람쥐","사슴","곰","말","낙타","원숭이","고슴도치","참새","올빼미","독수리","지렁이","달팽이","사슴벌레","소","닭","고양이","돼지","캥거루","뱀","거북","악어","새우"],
+  black: ["까치","펭귄","곰","개미","거미","오징어","사슴벌레","소","고양이","얼룩말","타조","잠자리"],
+  white: ["까치","펭귄","양","오리","기러기","토끼","고양이","얼룩말","해파리"],
+  gray:  ["코끼리","하마","돌고래","고래","상어","늑대","가오리","물개","박쥐","악어","문어","해파리"],
+  yellow:["사자","기린","꿀벌","금붕어","앵무새","메뚜기"],
+  red:   ["무당벌레","게","금붕어","연어","문어"],
+  green: ["개구리","도마뱀","메뚜기","나비","앵무새","거북","뱀","잠자리"],
+  orange:["호랑이","여우","금붕어","게","연어"],
+};
+const COLOR_LABEL = { brown:"갈색", black:"검은색", white:"흰색", gray:"회색",
+                      yellow:"노란색", red:"붉은색", green:"초록색", orange:"주황색" };
+
+// 위에서 정리한 내용을 동물 하나하나에 붙여준다
+ANIMALS.forEach(a => {
+  for (const key of Object.keys(TRAITS)) a[key] = TRAITS[key].includes(a.name) ? 1 : 0;
+
+  a.size = 2;
+  for (const s of Object.keys(SIZE_GROUP)) if (SIZE_GROUP[s].includes(a.name)) a.size = Number(s);
+
+  a.speed = 2;
+  for (const s of Object.keys(SPEED_GROUP)) if (SPEED_GROUP[s].includes(a.name)) a.speed = Number(s);
+
+  a.habitat = Object.keys(HABITAT_GROUP).filter(h => HABITAT_GROUP[h].includes(a.name));
+  if (a.habitat.length === 0) a.habitat = ["ground"];
+
+  a.colors = Object.keys(COLOR_GROUP).filter(c => COLOR_GROUP[c].includes(a.name));
+});
+
+// 오답일 때 알려줄 사실을 만들 때 쓰는 도우미
+function sayHabitat(a) {
+  return a.habitat.map(h => HABITAT_LABEL[h]).join("·") + "에서 삽니다";
+}
+function sayColor(a) {
+  if (a.colors.length === 0) return "색이 다양합니다";
+  return "주로 " + a.colors.map(c => COLOR_LABEL[c]).join("·") + " 입니다";
+}
+function sayLegs(a) {
+  return a.legs === 0 ? "다리가 없습니다" : "다리가 " + a.legs + "개입니다";
+}
+
+// ============================================================
+// ❓ 질문 목록 — 매번 무작위로 골라 보여준다
+//   q    : 질문   check: 예/아니오 판단
+//   fact : 답이 '아니오'일 때 알려줄 사실 (예: "아니오 · 다리가 6개입니다")
+// ============================================================
+const QUESTIONS = [
+  // ── 생김새 ──
+  { g:"생김새", q:"다리가 4개인가요?",         check: a => a.legs === 4,  fact: sayLegs },
+  { g:"생김새", q:"다리가 2개인가요?",         check: a => a.legs === 2,  fact: sayLegs },
+  { g:"생김새", q:"다리가 6개 이상인가요?",    check: a => a.legs >= 6,   fact: sayLegs },
+  { g:"생김새", q:"다리가 없나요?",            check: a => a.legs === 0,  fact: sayLegs },
+  { g:"생김새", q:"꼬리가 있나요?",            check: a => !!a.tail,      fact: a => a.tail ? "꼬리가 있습니다" : "꼬리가 없습니다" },
+  { g:"생김새", q:"쫑긋한 귀가 보이나요?",     check: a => !!a.ears,      fact: a => a.ears ? "귀가 보입니다" : "겉으로 드러난 귀가 없습니다" },
+  { g:"생김새", q:"뿔이 있나요?",              check: a => !!a.horns,     fact: a => a.horns ? "뿔이 있습니다" : "뿔이 없습니다" },
+  { g:"생김새", q:"털이 있나요?",              check: a => !!a.fur,       fact: a => a.fur ? "털이 있습니다" : (a.feather ? "털 대신 깃털이 있습니다" : (a.scale ? "털 대신 비늘이 있습니다" : "털이 없습니다")) },
+  { g:"생김새", q:"깃털이 있나요?",            check: a => !!a.feather,   fact: a => a.feather ? "깃털이 있습니다" : (a.fur ? "깃털 대신 털이 있습니다" : "깃털이 없습니다") },
+  { g:"생김새", q:"비늘이 있나요?",            check: a => !!a.scale,     fact: a => a.scale ? "비늘이 있습니다" : "비늘이 없습니다" },
+  { g:"생김새", q:"날개가 있나요?",            check: a => !!a.wings,     fact: a => a.wings ? "날개가 있습니다" : "날개가 없습니다" },
+  { g:"생김새", q:"껍데기나 등딱지가 있나요?", check: a => !!a.shell,     fact: a => a.shell ? "껍데기가 있습니다" : "껍데기가 없습니다" },
+  { g:"생김새", q:"몸이 가늘고 길쭉한가요?",   check: a => !!a.slim,      fact: a => a.slim ? "가늘고 길쭉합니다" : "길쭉한 몸은 아닙니다" },
+
+  // ── 색·크기·빠르기 ──
+  { g:"색·크기", q:"몸에 줄무늬가 있나요?",     check: a => !!a.stripe,   fact: a => a.stripe ? "줄무늬가 있습니다" : "줄무늬는 없습니다" },
+  { g:"색·크기", q:"몸이 검은색과 흰색인가요?", check: a => !!a.bw,       fact: sayColor },
+  { g:"색·크기", q:"갈색 계열인가요?",          check: a => a.colors.includes("brown"), fact: sayColor },
+  { g:"색·크기", q:"몸에 노란색이 있나요?",     check: a => a.colors.includes("yellow"), fact: sayColor },
+  { g:"색·크기", q:"몸이 회색인가요?",          check: a => a.colors.includes("gray"),   fact: sayColor },
+  { g:"색·크기", q:"초록색이 있나요?",          check: a => a.colors.includes("green"),  fact: sayColor },
+  { g:"색·크기", q:"주황색이 있나요?",          check: a => a.colors.includes("orange"), fact: sayColor },
+  { g:"색·크기", q:"손바닥에 올릴 만큼 작나요?",check: a => a.size <= 1,  fact: a => SIZE_LABEL[a.size] },
+  { g:"색·크기", q:"어른 사람보다 큰가요?",     check: a => a.size >= 4,  fact: a => SIZE_LABEL[a.size] },
+  { g:"색·크기", q:"몸길이가 10m를 넘나요?",    check: a => !!a.huge,     fact: a => SIZE_LABEL[a.size] },
+  { g:"색·크기", q:"아주 빠르게 움직이나요?",   check: a => a.speed === 3, fact: a => SPEED_LABEL[a.speed] },
+  { g:"색·크기", q:"아주 느리게 움직이나요?",   check: a => a.speed === 1, fact: a => SPEED_LABEL[a.speed] },
+
+  // ── 분류 ──
+  { g:"분류",   q:"포유류인가요?",             check: a => a.cls === "포유류", fact: a => a.cls + "입니다" },
+  { g:"분류",   q:"새(조류)인가요?",           check: a => a.cls === "조류",   fact: a => a.cls + "입니다" },
+  { g:"분류",   q:"곤충인가요?",               check: a => a.cls === "곤충",   fact: a => a.cls + "입니다" },
+  { g:"분류",   q:"파충류인가요?",             check: a => a.cls === "파충류", fact: a => a.cls + "입니다" },
+  { g:"분류",   q:"물고기(어류)인가요?",       check: a => a.cls === "어류",   fact: a => a.cls + "입니다" },
+  { g:"분류",   q:"등뼈가 있나요?",            check: a => !!a.bone, fact: a => a.bone ? "등뼈가 있는 척추동물입니다" : "등뼈가 없는 무척추동물입니다" },
+  { g:"분류",   q:"알을 낳나요?",              check: a => !!a.eggs, fact: a => a.eggs ? "알을 낳습니다" : "새끼를 낳습니다" },
+  { g:"분류",   q:"새끼를 낳나요?",            check: a => !a.eggs,  fact: a => a.eggs ? "알을 낳습니다" : "새끼를 낳습니다" },
+
+  // ── 사는 곳 ──
+  { g:"사는 곳", q:"물속이나 물가에서 사나요?", check: a => a.habitat.includes("water"), fact: sayHabitat },
+  { g:"사는 곳", q:"나무 위에서 지내나요?",     check: a => a.habitat.includes("tree"),  fact: sayHabitat },
+  { g:"사는 곳", q:"땅속에서 지내나요?",        check: a => a.habitat.includes("under"), fact: sayHabitat },
+  { g:"사는 곳", q:"하늘을 자주 날아다니나요?", check: a => a.habitat.includes("sky"),   fact: sayHabitat },
+  { g:"사는 곳", q:"한국 야생에서 볼 수 있나요?", check: a => !!a.korea, fact: a => a.korea ? "한국에서도 볼 수 있습니다" : "한국 야생에는 살지 않습니다" },
+  { g:"사는 곳", q:"사람이 기르기도 하나요?",   check: a => !!a.tame,  fact: a => a.tame ? "사람이 기르기도 합니다" : "사람이 기르지는 않습니다" },
+
+  // ── 생활 ──
+  { g:"생활",   q:"날 수 있나요?",             check: a => !!a.flies, fact: a => a.flies ? "날 수 있습니다" : "날지 못합니다" },
+  { g:"생활",   q:"헤엄칠 수 있나요?",         check: a => !!a.swim,  fact: a => a.swim ? "헤엄칠 수 있습니다" : "헤엄치지 못합니다" },
+  { g:"생활",   q:"밤에 주로 활동하나요?",     check: a => !!a.night, fact: a => a.night ? "밤에 활동합니다" : "낮에 활동합니다" },
+  { g:"생활",   q:"고기를 먹나요?",            check: a => !!a.meat,  fact: a => a.meat && a.plant ? "고기도 풀도 먹습니다" : (a.meat ? "고기를 먹습니다" : "풀·열매를 먹습니다") },
+  { g:"생활",   q:"풀이나 열매를 먹나요?",     check: a => !!a.plant, fact: a => a.meat && a.plant ? "고기도 풀도 먹습니다" : (a.plant ? "풀·열매를 먹습니다" : "고기를 먹습니다") },
+  { g:"생활",   q:"무리 지어 사나요?",         check: a => !!a.group, fact: a => a.group ? "무리 지어 삽니다" : "혼자 지냅니다" },
+];
+
+const MAX_QUESTIONS = 6;   // 한 문제에 쓸 수 있는 질문 수
+const SHOW_PER_GROUP = 4;  // 묶음마다 보여줄 질문 수 (매번 다르게 뽑는다)
+const CHOICE_COUNT = 10;   // 정답 보기 개수
+const TILE_COUNT = 25;     // 사진을 덮는 타일 (5 x 5)
+
+// ============================================================
+// 🎮 게임 상태
+// ============================================================
+let answer = null;         // 이번 문제의 정답 동물
+let answerData = null;     // 위키에서 받아온 사진·설명
+let questionsLeft = MAX_QUESTIONS;
+let askedIdx = [];         // 이미 물어본 질문 번호
+let choices = [];          // 보기로 보여줄 동물들
+let shownQ = [];           // 이번 문제에 보여줄 질문 번호 (매번 다르게)
+let finished = false;
+let hiddenTiles = [];      // 아직 안 벗겨진 타일 번호
+
+// ============================================================
+// 🌐 위키백과에서 사진과 설명 가져오기 (fetch!)
+//   한 번 받아온 동물은 localStorage에 저장해 다시 부르지 않는다
+// ============================================================
+const WIKI_CACHE = "animalQuizWiki";
+
+function cacheGet(key) {
+  try { return (JSON.parse(localStorage.getItem(WIKI_CACHE) || "{}"))[key] || null; }
+  catch { return null; }
+}
+function cacheSet(key, value) {
+  try {
+    const c = JSON.parse(localStorage.getItem(WIKI_CACHE) || "{}");
+    c[key] = value;
+    localStorage.setItem(WIKI_CACHE, JSON.stringify(c));
+  } catch {}
+}
+
+// 위키백과 문서 하나를 가져온다 (한 번 받은 건 저장해 두고 다시 쓴다)
+async function fetchWiki(wikiTitle) {
+  const cached = cacheGet(wikiTitle);
+  if (cached) return cached;
+
+  const url = "https://ko.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(wikiTitle);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("위키백과에서 정보를 못 가져왔어요 (" + res.status + ")");
+  const data = await res.json();
+
+  const info = {
+    title: data.title,
+    image: (data.originalimage && data.originalimage.source) ||
+           (data.thumbnail && data.thumbnail.source) || "",
+    extract: data.extract || "",
+    link: (data.content_urls && data.content_urls.desktop && data.content_urls.desktop.page) || "",
+  };
+  cacheSet(wikiTitle, info);
+  return info;
+}
+
+// 동물 하나의 사진·설명을 마련한다
+//   보통은 문서 하나면 되지만, 대표 사진이 '모음 사진'인 동물은
+//   사진만 다른 문서에서 가져와 바꿔 끼운다.
+async function fetchAnimal(animal) {
+  const info = await fetchWiki(animal.wiki);
+  const photoPage = PHOTO_FROM[animal.name];
+  if (!photoPage) return info;
+
+  try {
+    const alt = await fetchWiki(photoPage);
+    if (alt.image) return { ...info, image: alt.image };
+  } catch (e) { /* 실패하면 원래 사진을 그대로 쓴다 */ }
+  return info;
+}
+
+// ============================================================
+// 🎬 새 문제 시작
+// ============================================================
+async function newGame() {
+  finished = false;
+  questionsLeft = MAX_QUESTIONS;
+  askedIdx = [];
+  answer = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
+
+  pickQuestions();   // 이번에 보여줄 질문 고르기
+  pickChoices();     // 이번 보기 고르기
+
+  // 화면 초기화
+  document.getElementById("resultBox").innerHTML = "";
+  document.getElementById("qLog").innerHTML = "";
+  document.getElementById("logCount").textContent = "0개";
+  const le = document.getElementById("logEmpty");
+  if (le) le.style.display = "block";
+  document.getElementById("photoCaption").textContent = "";
+  document.getElementById("photoBox").innerHTML =
+    '<div class="loading"><div class="spinner"></div><div>동물을 데려오는 중...</div></div>';
+
+  renderQuestions();
+  renderChoices();
+  updateScoreboard();
+
+  try {
+    answerData = await fetchAnimal(answer);
+    showPhoto(answerData.image);
+  } catch (err) {
+    document.getElementById("photoBox").innerHTML =
+      '<div class="loading" style="color:var(--coral)">⚠️<br>' + err.message + '</div>';
+  }
+}
+
+// 질문이 29개나 되므로, 묶음마다 몇 개씩만 무작위로 보여준다
+// (매번 질문이 달라져서 같은 동물이 나와도 새롭다)
+function pickQuestions() {
+  const byGroup = {};
+  QUESTIONS.forEach((item, i) => {
+    if (!byGroup[item.g]) byGroup[item.g] = [];
+    byGroup[item.g].push(i);
+  });
+  shownQ = [];
+  for (const g of Object.keys(byGroup)) {
+    shownQ.push(...shuffle([...byGroup[g]]).slice(0, SHOW_PER_GROUP));
+  }
+}
+
+// 보기는 '같은 분류' 동물을 많이 섞어서 헷갈리게 만든다
+// (포유류가 답인데 보기가 전부 곤충이면 너무 쉬우니까)
+function pickChoices() {
+  const others = ANIMALS.filter(a => a.name !== answer.name);
+  const same = shuffle(others.filter(a => a.cls === answer.cls));
+  const diff = shuffle(others.filter(a => a.cls !== answer.cls));
+  const picked = same.slice(0, Math.min(5, same.length));
+  for (const a of diff) {
+    if (picked.length >= CHOICE_COUNT - 1) break;
+    picked.push(a);
+  }
+  for (const a of same) {           // 그래도 모자라면 같은 분류에서 더 채운다
+    if (picked.length >= CHOICE_COUNT - 1) break;
+    if (!picked.includes(a)) picked.push(a);
+  }
+  choices = shuffle([answer, ...picked]);
+}
+
+// 사진을 타일로 덮어서 보여준다
+function showPhoto(src) {
+  const box = document.getElementById("photoBox");
+  box.classList.remove("win");
+  box.innerHTML =
+    '<img id="quizImg" src="' + src + '" alt="???">' +
+    '<div class="tiles" id="tiles"></div>' +
+    '<canvas class="confetti" id="confetti"></canvas>';
+
+  const tiles = document.getElementById("tiles");
+  hiddenTiles = [];
+  for (let i = 0; i < TILE_COUNT; i++) {
+    const d = document.createElement("div");
+    d.className = "tile";
+    d.id = "tile-" + i;
+    tiles.appendChild(d);
+    hiddenTiles.push(i);
+  }
+  updateReveal();
+}
+
+// 남은 질문 수에 따라 흐림 정도를 정한다 (질문할수록 또렷해짐)
+// 남은 질문 수에 따라 사진이 얼마나 드러날지 한 번에 정한다.
+//
+//   처음(질문 8개 남음)  : 아주 흐리고 어두워 형체만 보임
+//   중간(4개 남음)       : 윤곽과 색이 보이기 시작
+//   막판(1~2개 남음)     : 거의 다 보임 — 아직 못 맞혔다면 여기서 확신을 얻는다
+//
+// 남은 질문이 줄수록 '빠르게' 선명해지도록 제곱을 써서 곡선을 만든다.
+// (앞부분은 천천히, 뒷부분은 확 밝아진다)
+function updateReveal() {
+  const ratio = Math.max(0, questionsLeft) / MAX_QUESTIONS;   // 1 → 0
+  const hidden = Math.pow(ratio, 1.6);                        // 가려진 정도 (1 → 0)
+
+  // 타일도 같은 곡선으로 벗겨낸다
+  const shouldOff = Math.round(TILE_COUNT * (1 - hidden));
+  const offNow = TILE_COUNT - hiddenTiles.length;
+  if (shouldOff > offNow) peelTiles(shouldOff - offNow);
+
+  const img = document.getElementById("quizImg");
+  if (!img) return;
+
+  if (finished) {                       // 정답을 맞혔거나 끝나면 원본 그대로
+    img.style.filter = "none";
+    img.style.transform = "scale(1)";
+    return;
+  }
+
+  const blur   = 30 * hidden;                        // 30px → 0px
+  const bright = 1 - 0.62 * Math.pow(ratio, 1.3);    // 0.38 → 1
+  const sat    = 1 - 0.70 * Math.pow(ratio, 1.3);    // 0.30 → 1
+  img.style.filter = `blur(${blur.toFixed(1)}px) brightness(${bright.toFixed(2)}) saturate(${sat.toFixed(2)})`;
+  // 흐림이 클 때만 살짝 확대해서 가장자리가 비지 않게 한다
+  img.style.transform = `scale(${(1 + blur / 300).toFixed(3)})`;
+}
+
+// 타일 몇 개를 벗긴다
+function peelTiles(count) {
+  for (let i = 0; i < count && hiddenTiles.length > 0; i++) {
+    const pick = Math.floor(Math.random() * hiddenTiles.length);
+    const idx = hiddenTiles.splice(pick, 1)[0];
+    const t = document.getElementById("tile-" + idx);
+    if (t) t.classList.add("off");
+  }
+}
+
+// ============================================================
+// ❓ 질문하기
+// ============================================================
+function renderQuestions() {
+  // 묶음(생김새 / 분류 / 사는 모습)별로 제목을 달아 보여준다
+  const groups = {};
+  shownQ.forEach(i => {
+    const g = QUESTIONS[i].g;
+    if (!groups[g]) groups[g] = [];
+    groups[g].push(i);
+  });
+
+  let html = "";
+  for (const g of Object.keys(groups)) {
+    html += `<div class="q-group-title">— ${g} —</div><div class="q-list">`;
+    html += groups[g].map(i =>
+      `<button class="q-btn" id="q-${i}" onclick="ask(${i})"
+         ${askedIdx.includes(i) || questionsLeft <= 0 || finished ? "disabled" : ""}>
+         ${QUESTIONS[i].q}
+       </button>`
+    ).join("");
+    html += "</div>";
+  }
+  document.getElementById("qList").innerHTML = html;
+  document.getElementById("qLeft").textContent = questionsLeft;
+}
+
+function ask(i) {
+  if (finished || questionsLeft <= 0 || askedIdx.includes(i)) return;
+
+  const yes = QUESTIONS[i].check(answer);
+  askedIdx.push(i);
+  questionsLeft--;
+
+  // 기록에 남기기 — '아니오'면 실제로는 어떤지 알려준다
+  const fact = (!yes && QUESTIONS[i].fact) ? QUESTIONS[i].fact(answer) : "";
+  document.getElementById("qLog").insertAdjacentHTML("beforeend",
+    `<div class="q-log-item">
+       <span class="ans ${yes ? "yes" : "no"}">${yes ? "예" : "아니오"}</span>
+       <span>${QUESTIONS[i].q}${fact ? `<span class="fact">→ ${fact}</span>` : ""}</span>
+     </div>`);
+
+  const logEmpty = document.getElementById("logEmpty");
+  if (logEmpty) logEmpty.style.display = "none";
+  document.getElementById("logCount").textContent = askedIdx.length + "개";
+
+  // 새로 알아낸 내용이 늘 보이도록 기록을 맨 아래로 내린다
+  const logBox = document.getElementById("qLog");
+  logBox.scrollTop = logBox.scrollHeight;
+
+  updateReveal();    // 질문을 쓸수록 사진이 더 선명해진다
+  renderQuestions();
+  updateScoreboard();
+
+  if (questionsLeft === 0) {
+    document.getElementById("photoCaption").textContent =
+      "질문을 다 썼어요! 이제 정답을 골라보세요 🎯";
+  }
+}
+
+// ============================================================
+// 🎯 정답 고르기
+// ============================================================
+function renderChoices() {
+  document.getElementById("choices").innerHTML = choices.map((a, i) =>
+    `<button class="choice-btn" id="c-${i}" onclick="guess(${i})" ${finished ? "disabled" : ""}>${a.name}</button>`
+  ).join("");
+}
+
+function guess(i) {
+  if (finished) return;
+  const picked = choices[i];
+
+  if (picked.name === answer.name) {
+    finish(true);
+  } else {
+    // 틀리면 그 보기는 지워지고 질문 1개를 잃는다
+    const btn = document.getElementById("c-" + i);
+    btn.classList.add("wrong");
+    btn.disabled = true;
+    if (questionsLeft > 0) questionsLeft--;
+    updateReveal();
+    renderQuestions();
+    updateScoreboard();
+    document.getElementById("photoCaption").textContent = "아쉬워요! 다시 생각해볼까요? 🤔";
+  }
+}
+
+function finish(correct) {
+  finished = true;
+
+  // 남은 질문이 많을수록 점수가 높다
+  const score = correct ? 20 + questionsLeft * 10 : 0;   // 질문을 아낄수록 최대 100점
+  saveRecord(correct, score);
+
+  // 타일을 전부 벗기고 사진을 또렷하게
+  peelTiles(TILE_COUNT);   // 끝났으니 남은 타일을 모두 벗긴다
+  updateReveal();
+
+  renderQuestions();
+  renderChoices();
+  updateScoreboard(score);
+
+  document.getElementById("photoCaption").textContent = answerData ? answerData.title : answer.name;
+  if (correct) fireConfetti();   // 🎉 축하 색종이!
+  document.getElementById("resultBox").innerHTML = `
+    <div class="result">
+      <h3>${correct ? "🎉 정답!" : "😅 아쉬워요"} 답은 <span style="color:var(--teal)">${answer.name}</span>였어요</h3>
+      <div style="font-size:12px;color:var(--muted);">
+        질문 ${MAX_QUESTIONS - questionsLeft}개 사용 · 이번 점수 <b style="color:var(--yellow)">${score}점</b>
+      </div>
+      <div class="desc">${answerData ? escapeHtml(answerData.extract) : ""}</div>
+      <div class="src">📖 설명 출처: 위키백과${answerData && answerData.link ? ` · <a href="${answerData.link}" target="_blank" style="color:var(--teal)">더 읽기</a>` : ""}</div>
+    </div>
+    <button class="btn btn-main" onclick="newGame()">🔄 다음 문제</button>
+  `;
+}
+
+// ============================================================
+// 🎉 축포 (정답을 맞혔을 때)
+//   사진 위에 투명한 판(canvas)을 깔고, 아래 양쪽에서 색종이를 쏘아 올린다.
+//   색종이 하나하나가 '위치·속도·회전'을 가진 작은 조각이고,
+//   매 순간 속도에 중력을 더해 다시 그리면 날아가는 것처럼 보인다.
+// ============================================================
+const CONFETTI_COLORS = ["#5EEAD4", "#F5D547", "#FF6B9D", "#7C6AFF", "#7FD27F", "#FFA75E", "#FFFFFF"];
+
+function fireConfetti() {
+  const box = document.getElementById("photoBox");
+  const canvas = document.getElementById("confetti");
+  if (!box || !canvas || !canvas.getContext) return;
+
+  // 사진이 살짝 튀어오르는 효과
+  box.classList.add("win");
+
+  // 움직임을 줄이는 설정을 켠 사람에겐 애니메이션을 생략한다
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  const W = canvas.width = box.clientWidth;
+  const H = canvas.height = box.clientHeight;
+  const ctx = canvas.getContext("2d");
+
+  // 아래 양쪽 구석에서 안쪽 위로 쏘아 올린다
+  const pieces = [];
+  const cannons = [
+    { x: W * 0.08, y: H * 0.98, aim: -Math.PI / 3.2 },   // 왼쪽 → 오른쪽 위
+    { x: W * 0.92, y: H * 0.98, aim: -Math.PI + Math.PI / 3.2 },  // 오른쪽 → 왼쪽 위
+  ];
+
+  for (const c of cannons) {
+    for (let i = 0; i < 70; i++) {
+      const angle = c.aim + (Math.random() - 0.5) * 0.7;   // 부채꼴로 퍼지게
+      const speed = 7 + Math.random() * 8;
+      pieces.push({
+        x: c.x, y: c.y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size: 5 + Math.random() * 6,
+        color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+        rot: Math.random() * Math.PI,
+        vr: (Math.random() - 0.5) * 0.4,
+        life: 1,
+      });
+    }
+  }
+
+  const GRAVITY = 0.22;
+  const start = Date.now();
+
+  function frame() {
+    ctx.clearRect(0, 0, W, H);
+    let alive = 0;
+
+    for (const p of pieces) {
+      p.vy += GRAVITY;        // 중력
+      p.vx *= 0.99;           // 공기 저항
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rot += p.vr;
+      p.life -= 0.008;        // 서서히 사라진다
+
+      if (p.life <= 0 || p.y > H + 30) continue;
+      alive++;
+
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, Math.min(1, p.life));
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);   // 납작한 색종이
+      ctx.restore();
+    }
+
+    // 조각이 다 사라지거나 4초가 지나면 멈춘다
+    if (alive > 0 && Date.now() - start < 4000) {
+      requestAnimationFrame(frame);
+    } else {
+      ctx.clearRect(0, 0, W, H);
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+// ============================================================
+// 🏆 점수 기록 (localStorage)
+// ============================================================
+const REC_KEY = "animalQuizRecord";
+
+function getRecord() {
+  try { return JSON.parse(localStorage.getItem(REC_KEY) || '{"best":0,"streak":0,"played":0}'); }
+  catch { return { best: 0, streak: 0, played: 0 }; }
+}
+
+function saveRecord(correct, score) {
+  const r = getRecord();
+  r.played += 1;
+  r.streak = correct ? r.streak + 1 : 0;
+  if (score > r.best) r.best = score;
+  localStorage.setItem(REC_KEY, JSON.stringify(r));
+}
+
+function updateScoreboard(nowScore) {
+  const r = getRecord();
+  const expected = finished ? (nowScore || 0) : 20 + questionsLeft * 10;
+  document.getElementById("scoreNow").textContent = expected;
+
+  // 화면 구석 표시도 함께 갱신 (스크롤을 내려도 보인다)
+  const hud = document.getElementById("hud");
+  if (hud) {
+    document.getElementById("hudLeft").textContent = questionsLeft;
+    document.getElementById("hudScore").textContent = finished ? "끝!" : expected + "점 예상";
+    hud.classList.toggle("low", !finished && questionsLeft > 0 && questionsLeft <= 2);
+    hud.classList.toggle("none", !finished && questionsLeft === 0);
+  }
+  document.getElementById("scoreBest").textContent = r.best;
+  document.getElementById("streak").textContent = r.streak;
+  document.getElementById("played").textContent = r.played;
+}
+
+// ============================================================
+// 🛠️ 도우미
+// ============================================================
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function escapeHtml(str) {
+  return String(str == null ? "" : str)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// ============================================================
+// 시작!
+// ============================================================
+newGame();
+@@END_SCRIPT_TAG@@>
+
+</body>
+</html>
+</script>
+
+<script>
+(function () {
+  var IDS   = ["movie","nasa","animal"];
+  var TOKEN = "@@END_SCRIPT_TAG@@";
+  var END   = '<' + '/script';
+
+  var loaded  = {};
+  var current = 'home';
+
+  /* 앱 하나를 아이프레임 안에 실제 문서로 띄운다.
+     about:blank 아이프레임은 부모와 출처가 같아서
+     각 앱의 localStorage / location.hash / history.back() 이 그대로 동작한다. */
+  function boot(id) {
+    if (loaded[id]) return;
+    loaded[id] = true;
+
+    var view = document.getElementById('view-' + id);
+    view.innerHTML = '<div class="booting">불러오는 중…</div>';
+
+    var src = document.getElementById('src-' + id).textContent.split(TOKEN).join(END);
+
+    var ifr = document.createElement('iframe');
+    ifr.setAttribute('title', id);
+    view.innerHTML = '';
+    view.appendChild(ifr);            // DOM 에 붙인 뒤에 써야 문서가 생긴다
+
+    var doc = ifr.contentDocument || ifr.contentWindow.document;
+    doc.open();
+    doc.write(src);
+    doc.close();
+  }
+
+  function show(id) {
+    var i, v = document.querySelectorAll('.view');
+    for (i = 0; i < v.length; i++) v[i].classList.remove('on');
+    var t = document.querySelectorAll('.tab');
+    for (i = 0; i < t.length; i++) t[i].classList.remove('on');
+
+    if (id !== 'home') boot(id);
+
+    document.getElementById('view-' + id).classList.add('on');
+    var tab = document.querySelector('.tab[data-tab="' + id + '"]');
+    if (tab) tab.classList.add('on');
+
+    document.getElementById('reloadBtn').classList.toggle('show', id !== 'home');
+    current = id;
+  }
+
+  var btns = document.querySelectorAll('[data-tab]');
+  for (var i = 0; i < btns.length; i++) {
+    (function (el) {
+      el.addEventListener('click', function () { show(el.getAttribute('data-tab')); });
+    })(btns[i]);
+  }
+
+  /* 다시 시작 — 지금 보고 있는 실습만 처음 상태로 되돌린다 */
+  document.getElementById('reloadBtn').addEventListener('click', function () {
+    if (current === 'home') return;
+    loaded[current] = false;
+    boot(current);
+  });
+
+  show('home');
+})();
+</script>
+
+</body>
+</html>

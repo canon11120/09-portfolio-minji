@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🦉 명탐정 부엉즈 · 동물 추리 사무소</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* 스크롤 막대를 숨긴다 — 마우스 휠·터치로 넘기는 건 그대로 된다
+     (질문이 많아지면서 오른쪽에 생기던 막대가 눈에 걸리지 않게) */
+  html, body, .result .desc {
+    scrollbar-width: none;        /* 파이어폭스 */
+    -ms-overflow-style: none;     /* 옛 엣지 */
+  }
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar,
+  .result .desc::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;                /* 크롬·엣지·사파리 */
+  }
+
+  /* 기록만은 스크롤바를 보여준다 — 위에 더 있다는 걸 알 수 있게 */
+  .q-log { scrollbar-width: thin; scrollbar-color: var(--purple-lt) var(--bg-deep); }
+  .q-log::-webkit-scrollbar { width: 8px; }
+  .q-log::-webkit-scrollbar-track { background: var(--bg-deep); border-radius: 4px; }
+  .q-log::-webkit-scrollbar-thumb {
+    background: var(--purple-lt);
+    border-radius: 4px;
+  }
+  .q-log::-webkit-scrollbar-thumb:hover { background: var(--purple); }
+
+  :root {
+    --bg: #1B1E3A;
+    --bg-deep: #12152E;
+    --bg-lift: #232746;
+    --card: #242950;
+    --card-hi: #2E3460;
+    --text: #FFFFFF;
+    --off: #E8EAF6;
+    --muted: #A8AED1;
+    --dim: #6A6F95;
+    --purple: #7C6AFF;
+    --purple-lt: #9F90FF;
+    --teal: #5EEAD4;
+    --yellow: #F5D547;
+    --pink: #FF6B9D;
+    --orange: #FFA75E;
+    --coral: #FF7A7A;
+    --green: #7FD27F;
+  }
+
+  body {
+    font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+    background:
+      radial-gradient(ellipse at top left, rgba(124,106,255,0.15), transparent 50%),
+      radial-gradient(ellipse at bottom right, rgba(94,234,212,0.12), transparent 50%),
+      var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .container { max-width: 1000px; margin: 0 auto; }
+
+  header {
+    text-align: center;
+    padding: 10px 0 24px;
+  }
+  header h1 {
+    cursor: pointer;
+    font-size: 32px;
+    background: linear-gradient(90deg, var(--teal), var(--purple-lt));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+  header .sub { color: var(--muted); font-size: 13px; }
+
+  /* ============ 점수판 ============ */
+  .scoreboard {
+    display: flex;
+    justify-content: center;
+    gap: 26px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .score-item { text-align: center; }
+  .score-item .num {
+    font-size: 24px;
+    font-weight: bold;
+    font-variant-numeric: tabular-nums;
+    display: block;
+  }
+  .score-item .label { font-size: 11px; color: var(--dim); }
+
+  /* ============ 게임판 ============ */
+  .board {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 22px;
+  }
+
+  /* 사진 (가려진 상태) */
+  .photo-box {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: var(--bg-deep);
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--card-hi);
+  }
+  .photo-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    /* 처음엔 아주 흐리고 어둡게 → 질문할수록 또렷해진다 */
+    filter: blur(30px) brightness(0.38) saturate(0.3);
+    transform: scale(1.1);          /* 흐림 때문에 가장자리가 비는 걸 막는다 */
+    transition: filter 0.8s ease, transform 0.8s ease;
+  }
+  /* 사진을 덮는 타일들 (하나씩 벗겨진다) */
+  .tiles {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+  }
+  .tile {
+    background: var(--card);
+    border: 1px solid rgba(0,0,0,0.25);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .tile.off { opacity: 0; transform: scale(0.7); }
+
+  /* 축포가 그려질 투명한 판 — 사진 위에 겹쳐 놓는다 */
+  .confetti {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;   /* 클릭은 그대로 사진에 전달된다 */
+  }
+
+  /* 정답을 맞힌 순간 사진이 살짝 튀어오르며 빛난다 */
+  @keyframes win-pop {
+    0%   { transform: scale(1);    box-shadow: 0 0 0 0 rgba(94,234,212,0.7); }
+    40%  { transform: scale(1.04); box-shadow: 0 0 0 14px rgba(94,234,212,0); }
+    100% { transform: scale(1);    box-shadow: 0 0 0 0 rgba(94,234,212,0); }
+  }
+  .photo-box.win { animation: win-pop 0.9s ease-out; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .photo-box.win { animation: none; }
+  }
+
+  .photo-caption {
+    text-align: center;
+    font-size: 12px;
+    color: var(--dim);
+    margin-top: 10px;
+    min-height: 18px;
+  }
+
+  /* ============ 질문 ============ */
+  .panel {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 16px 18px;
+  }
+  .panel h2 {
+    font-size: 15px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .panel .hint {
+    font-size: 11px;
+    color: var(--dim);
+    margin-bottom: 8px;
+  }
+
+  .q-list {
+    display: grid;
+    /* 한 묶음(4개)이 한 줄에 들어가도록 — 줄 수가 줄어 마지막 질문까지 한눈에 보인다 */
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  @media (max-width: 1100px) {
+    .q-list { grid-template-columns: repeat(2, 1fr); }
+  }
+  .q-btn {
+    padding: 8px 10px;
+    line-height: 1.35;
+    background: var(--bg-deep);
+    border: 1px solid var(--card-hi);
+    border-radius: 10px;
+    color: var(--off);
+    font-family: inherit;
+    font-size: 11.5px;
+    text-align: left;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+  .q-btn:hover:not(:disabled) { border-color: var(--purple-lt); transform: translateY(-2px); }
+  .q-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* 질문 묶음 제목 */
+  .q-group-title {
+    font-size: 10.5px;
+    font-weight: bold;
+    color: var(--teal);
+    margin: 9px 0 4px;
+    letter-spacing: 0.03em;
+  }
+  .q-group-title:first-child { margin-top: 0; }
+
+  /* 질문한 내역 */
+  .log-panel {
+    margin-top: 14px;
+    background: var(--card);
+    border-radius: 14px;
+    padding: 14px 16px;
+  }
+  .log-title {
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--teal);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .log-title span {
+    background: var(--bg-deep);
+    color: var(--muted);
+    border-radius: 999px;
+    padding: 1px 8px;
+    font-size: 11px;
+  }
+  .log-empty {
+    font-size: 12px;
+    color: var(--dim);
+    line-height: 1.7;
+    text-align: center;
+    padding: 10px 0;
+  }
+  .q-log { max-height: 268px; overflow-y: auto; padding-right: 6px; }   /* 6개쯤 보이는 높이 */
+  .q-log-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    background: var(--bg-deep);
+    border-radius: 8px;
+    margin-bottom: 6px;
+    font-size: 12.5px;
+  }
+  .ans {
+    flex-shrink: 0;
+    font-weight: bold;
+    font-size: 12px;
+    padding: 2px 9px;
+    border-radius: 999px;
+  }
+  .q-log-item .fact {
+    display: block;
+    color: var(--yellow);
+    font-size: 11.5px;
+    margin-top: 3px;
+  }
+  .ans.yes { background: rgba(127,210,127,0.18); color: var(--green); }
+  .ans.no  { background: rgba(255,122,122,0.18); color: var(--coral); }
+
+  /* ============ 정답 고르기 ============ */
+  .answer-area { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--card-hi); }
+  .answer-area h2 { margin-bottom: 8px; flex-wrap: wrap; }
+  .inline-hint { font-size: 10.5px; color: var(--dim); font-weight: normal; }
+  .choices {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);   /* 보기 10개 = 두 줄 */
+    gap: 6px;
+  }
+  @media (max-width: 1100px) {
+    .choices { grid-template-columns: repeat(4, 1fr); }
+  }
+  .choice-btn {
+    padding: 8px 4px;
+    line-height: 1.2;
+    background: var(--bg-deep);
+    border: 1.5px solid var(--card-hi);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+  .choice-btn:hover:not(:disabled) { background: var(--purple); border-color: var(--purple); }
+  .choice-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .choice-btn.wrong { background: rgba(255,122,122,0.2); border-color: var(--coral); color: var(--coral); }
+
+  /* ============ 결과 ============ */
+  .result {
+    margin-top: 18px;
+    padding: 18px;
+    background: var(--bg-deep);
+    border-radius: 12px;
+    border-left: 4px solid var(--teal);
+  }
+  .result h3 { font-size: 18px; margin-bottom: 6px; }
+  .result .desc {
+    font-size: 13px;
+    line-height: 1.75;
+    color: var(--off);
+    max-height: 160px;
+    overflow-y: auto;
+    margin-top: 8px;
+  }
+  .result .src { font-size: 11px; color: var(--dim); margin-top: 8px; }
+
+  .btn {
+    padding: 12px 22px;
+    border-radius: 10px;
+    border: none;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+  .btn-main {
+    background: linear-gradient(90deg, var(--teal), var(--purple-lt));
+    color: #10132b;
+    width: 100%;
+    margin-top: 14px;
+  }
+  .btn-main:hover { transform: translateY(-2px); }
+
+  /* 스크롤을 내려도 늘 보이는 남은 질문 표시 */
+  .hud {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: rgba(18, 21, 46, 0.92);
+    border: 1.5px solid var(--purple-lt);
+    border-radius: 999px;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    font-size: 13px;
+    font-weight: bold;
+  }
+  .hud .hud-num {
+    font-size: 20px;
+    font-variant-numeric: tabular-nums;
+    color: var(--teal);
+  }
+  .hud.low  { border-color: var(--orange); }
+  .hud.low  .hud-num { color: var(--orange); }
+  .hud.none { border-color: var(--coral); }
+  .hud.none .hud-num { color: var(--coral); }
+  .hud .hud-sub { color: var(--dim); font-size: 11px; font-weight: normal; }
+  .hud .hud-top {
+    background: none; border: none; color: var(--muted);
+    font-size: 15px; cursor: pointer; padding: 0 2px;
+  }
+  .hud .hud-top:hover { color: var(--text); }
+  @media (max-width: 600px) {
+    .hud { right: 10px; bottom: 10px; padding: 8px 12px; }
+  }
+
+  .loading { text-align: center; padding: 40px 20px; color: var(--muted); }
+  .spinner {
+    width: 34px; height: 34px;
+    border: 3px solid var(--card-hi);
+    border-top-color: var(--teal);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+    margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  footer {
+    text-align: center;
+    color: var(--dim);
+    font-size: 12px;
+    padding: 30px 0 10px;
+  }
+
+  @media (max-width: 820px) {
+    .board { grid-template-columns: 1fr; }
+    .photo-box { max-width: 380px; margin: 0 auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <h1 onclick="location.reload()" title="처음부터 다시 시작하기">🦉 명탐정 부엉즈</h1>
+    <div class="sub">어둠 속 목격자를 찾아라! 질문을 던질수록 사진이 벗겨집니다 · 적은 질문으로 맞힐수록 높은 점수</div>
+  </header>
+
+  <div class="scoreboard">
+    <div class="score-item"><span class="num" id="scoreNow" style="color:var(--teal)">0</span><span class="label">이번 점수</span></div>
+    <div class="score-item"><span class="num" id="scoreBest" style="color:var(--yellow)">0</span><span class="label">최고 점수</span></div>
+    <div class="score-item"><span class="num" id="streak" style="color:var(--pink)">0</span><span class="label">연속 정답</span></div>
+    <div class="score-item"><span class="num" id="played">0</span><span class="label">푼 문제</span></div>
+  </div>
+
+  <div class="board">
+    <!-- 왼쪽: 가려진 사진 -->
+    <div>
+      <div class="photo-box" id="photoBox">
+        <div class="loading" id="photoLoading">
+          <div class="spinner"></div>
+          <div>동물을 데려오는 중...</div>
+        </div>
+      </div>
+      <div class="photo-caption" id="photoCaption"></div>
+
+      <!-- 질문에 대한 답을 사진 바로 아래에서 본다 -->
+      <div class="log-panel">
+        <div class="log-title">📋 지금까지 알아낸 것 <span id="logCount">0</span></div>
+        <div class="q-log" id="qLog"></div>
+        <div class="log-empty" id="logEmpty">아직 질문하지 않았어요.<br>오른쪽에서 질문을 눌러보세요!</div>
+      </div>
+    </div>
+
+    <!-- 오른쪽: 질문과 정답 -->
+    <div class="panel">
+      <h2>❓ 질문하기 <span style="font-size:12px;color:var(--dim);font-weight:normal;">남은 질문 <b id="qLeft" style="color:var(--teal)">6</b>개</span></h2>
+      <div class="hint">질문 하나에 사진이 조금씩 드러나요. 아낄수록 점수가 높아요!</div>
+
+      <div id="qList"></div>
+
+      <div class="answer-area">
+        <h2>🎯 정답 고르기 <span class="inline-hint">확신이 서면 눌러보세요 · 틀리면 질문 1개를 잃어요</span></h2>
+        <div class="choices" id="choices"></div>
+      </div>
+
+      <div id="resultBox"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 스크롤해도 늘 보이는 남은 질문 표시 -->
+<div class="hud" id="hud">
+  <span>❓ 남은 질문</span>
+  <span class="hud-num" id="hudLeft">6</span>
+  <span class="hud-sub" id="hudScore"></span>
+  <button class="hud-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="맨 위로">⬆</button>
+</div>
+
+<footer>
+  명탐정 부엉즈 · 이리고등학교 코딩 교육 2026 · 7주차 응용 · 사진·설명 by 위키백과
+</footer>
+
+<script>
+// ============================================================
+// 🐾 동물 도감 (40종)
+//   사진과 설명은 위키백과에서 가져오고(fetch!),
+//   아래 특징들은 우리가 직접 정리해 둔 자료다.
+//
+//   wiki : 위키백과 문서 제목        legs : 다리 수 (날개는 다리로 세지 않음)
+//   cls  : 분류                      ears : 쫑긋한 겉귀가 보이는지
+//   tail : 꼬리                      horns: 뿔
+//   fur  : 털   feather: 깃털        scale: 비늘
+//   wings: 날개  flies : 날 수 있음  swim : 헤엄칠 수 있음
+//   eggs : 알을 낳음                 bone : 등뼈(척추)가 있음
+//   night: 주로 밤에 활동            meat : 고기를 먹음   plant: 풀·열매를 먹음
+//   group: 무리 지어 삶              korea: 한국 야생에서 볼 수 있음
+//   tame : 집·농장에서 기름          big  : 어른 사람보다 큼
+// ============================================================
+const ANIMALS = [
+  // ── 포유류 ──
+  { name:"개",     wiki:"개",        cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:0,meat:1,plant:1,group:1,korea:0,tame:1,big:0 },
+  { name:"고양이", wiki:"고양이",    cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:0,eggs:0,bone:1,night:1,meat:1,plant:0,group:0,korea:0,tame:1,big:0 },
+  { name:"여우",   wiki:"여우",      cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:1,meat:1,plant:1,group:0,korea:1,tame:0,big:0 },
+  { name:"늑대",   wiki:"늑대",      cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:1,meat:1,plant:0,group:1,korea:1,tame:0,big:0 },
+  { name:"호랑이", wiki:"호랑이",    cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:1,meat:1,plant:0,group:0,korea:1,tame:0,big:1 },
+  { name:"사자",   wiki:"사자",      cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:1,meat:1,plant:0,group:1,korea:0,tame:0,big:1 },
+  { name:"곰",     wiki:"곰",        cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:0,meat:1,plant:1,group:0,korea:1,tame:0,big:1 },
+  { name:"토끼",   wiki:"토끼",      cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:0,eggs:0,bone:1,night:1,meat:0,plant:1,group:1,korea:1,tame:1,big:0 },
+  { name:"다람쥐", wiki:"다람쥐",    cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:0,eggs:0,bone:1,night:0,meat:0,plant:1,group:0,korea:1,tame:0,big:0 },
+  { name:"고슴도치",wiki:"고슴도치", cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:1,meat:1,plant:1,group:0,korea:1,tame:1,big:0 },
+  { name:"박쥐",   wiki:"박쥐",      cls:"포유류", legs:2, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:1,flies:1,swim:0,eggs:0,bone:1,night:1,meat:1,plant:1,group:1,korea:1,tame:0,big:0 },
+  { name:"말",     wiki:"말_(동물)", cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:0,meat:0,plant:1,group:1,korea:0,tame:1,big:1 },
+  { name:"소",     wiki:"소",        cls:"포유류", legs:4, ears:1,tail:1,horns:1,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:0,meat:0,plant:1,group:1,korea:0,tame:1,big:1 },
+  { name:"돼지",   wiki:"돼지",      cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:0,meat:1,plant:1,group:1,korea:1,tame:1,big:0 },
+  { name:"양",     wiki:"양",        cls:"포유류", legs:4, ears:1,tail:1,horns:1,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:0,meat:0,plant:1,group:1,korea:0,tame:1,big:0 },
+  { name:"사슴",   wiki:"사슴",      cls:"포유류", legs:4, ears:1,tail:1,horns:1,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:0,meat:0,plant:1,group:1,korea:1,tame:0,big:0 },
+  { name:"기린",   wiki:"기린",      cls:"포유류", legs:4, ears:1,tail:1,horns:1,fur:1,feather:0,scale:0,wings:0,flies:0,swim:0,eggs:0,bone:1,night:0,meat:0,plant:1,group:1,korea:0,tame:0,big:1 },
+  { name:"얼룩말", wiki:"얼룩말",    cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:0,meat:0,plant:1,group:1,korea:0,tame:0,big:1 },
+  { name:"코끼리", wiki:"코끼리",    cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:0,meat:0,plant:1,group:1,korea:0,tame:0,big:1 },
+  { name:"하마",   wiki:"하마",      cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:1,meat:0,plant:1,group:1,korea:0,tame:0,big:1 },
+  { name:"낙타",   wiki:"낙타",      cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:0,eggs:0,bone:1,night:0,meat:0,plant:1,group:1,korea:0,tame:1,big:1 },
+  { name:"캥거루", wiki:"캥거루",    cls:"포유류", legs:2, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:1,meat:0,plant:1,group:1,korea:0,tame:0,big:0 },
+  { name:"원숭이", wiki:"원숭이",    cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:0,eggs:0,bone:1,night:0,meat:0,plant:1,group:1,korea:0,tame:0,big:0 },
+  { name:"돌고래", wiki:"돌고래",    cls:"포유류", legs:0, ears:0,tail:1,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:0,meat:1,plant:0,group:1,korea:1,tame:0,big:1 },
+  { name:"고래",   wiki:"고래",      cls:"포유류", legs:0, ears:0,tail:1,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:0,meat:1,plant:0,group:1,korea:1,tame:0,big:1 },
+  { name:"물개",   wiki:"물개",      cls:"포유류", legs:4, ears:1,tail:1,horns:0,fur:1,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:0,bone:1,night:0,meat:1,plant:0,group:1,korea:1,tame:0,big:0 },
+
+  // ── 조류 ──
+  { name:"오리",   wiki:"오리",      cls:"조류",   legs:2, ears:0,tail:1,horns:0,fur:0,feather:1,scale:0,wings:1,flies:1,swim:1,eggs:1,bone:1,night:0,meat:1,plant:1,group:1,korea:1,tame:1,big:0 },
+  { name:"닭",     wiki:"닭",        cls:"조류",   legs:2, ears:0,tail:1,horns:0,fur:0,feather:1,scale:0,wings:1,flies:0,swim:0,eggs:1,bone:1,night:0,meat:1,plant:1,group:1,korea:0,tame:1,big:0 },
+  { name:"펭귄",   wiki:"펭귄",      cls:"조류",   legs:2, ears:0,tail:1,horns:0,fur:0,feather:1,scale:0,wings:1,flies:0,swim:1,eggs:1,bone:1,night:0,meat:1,plant:0,group:1,korea:0,tame:0,big:0 },
+  { name:"타조",   wiki:"타조",      cls:"조류",   legs:2, ears:0,tail:1,horns:0,fur:0,feather:1,scale:0,wings:1,flies:0,swim:0,eggs:1,bone:1,night:0,meat:1,plant:1,group:1,korea:0,tame:0,big:1 },
+  { name:"올빼미", wiki:"올빼미",    cls:"조류",   legs:2, ears:0,tail:1,horns:0,fur:0,feather:1,scale:0,wings:1,flies:1,swim:0,eggs:1,bone:1,night:1,meat:1,plant:0,group:0,korea:1,tame:0,big:0 },
+  { name:"독수리", wiki:"독수리",    cls:"조류",   legs:2, ears:0,tail:1,horns:0,fur:0,feather:1,scale:0,wings:1,flies:1,swim:0,eggs:1,bone:1,night:0,meat:1,plant:0,group:0,korea:1,tame:0,big:0 },
+  { name:"앵무새", wiki:"앵무새",    cls:"조류",   legs:2, ears:0,tail:1,horns:0,fur:0,feather:1,scale:0,wings:1,flies:1,swim:0,eggs:1,bone:1,night:0,meat:0,plant:1,group:1,korea:0,tame:1,big:0 },
+  { name:"까치",   wiki:"까치",      cls:"조류",   legs:2, ears:0,tail:1,horns:0,fur:0,feather:1,scale:0,wings:1,flies:1,swim:0,eggs:1,bone:1,night:0,meat:1,plant:1,group:1,korea:1,tame:0,big:0 },
+  { name:"참새",   wiki:"참새",      cls:"조류",   legs:2, ears:0,tail:1,horns:0,fur:0,feather:1,scale:0,wings:1,flies:1,swim:0,eggs:1,bone:1,night:0,meat:1,plant:1,group:1,korea:1,tame:0,big:0 },
+  { name:"기러기", wiki:"기러기",    cls:"조류",   legs:2, ears:0,tail:1,horns:0,fur:0,feather:1,scale:0,wings:1,flies:1,swim:1,eggs:1,bone:1,night:0,meat:0,plant:1,group:1,korea:1,tame:0,big:0 },
+
+  // ── 파충류 · 양서류 ──
+  { name:"뱀",     wiki:"뱀",        cls:"파충류", legs:0, ears:0,tail:1,horns:0,fur:0,feather:0,scale:1,wings:0,flies:0,swim:1,eggs:1,bone:1,night:1,meat:1,plant:0,group:0,korea:1,tame:0,big:0 },
+  { name:"거북",   wiki:"거북",      cls:"파충류", legs:4, ears:0,tail:1,horns:0,fur:0,feather:0,scale:1,wings:0,flies:0,swim:1,eggs:1,bone:1,night:0,meat:1,plant:1,group:0,korea:1,tame:1,big:0 },
+  { name:"악어",   wiki:"악어",      cls:"파충류", legs:4, ears:0,tail:1,horns:0,fur:0,feather:0,scale:1,wings:0,flies:0,swim:1,eggs:1,bone:1,night:1,meat:1,plant:0,group:0,korea:0,tame:0,big:1 },
+  { name:"도마뱀", wiki:"도마뱀",    cls:"파충류", legs:4, ears:0,tail:1,horns:0,fur:0,feather:0,scale:1,wings:0,flies:0,swim:0,eggs:1,bone:1,night:0,meat:1,plant:0,group:0,korea:1,tame:1,big:0 },
+  { name:"개구리", wiki:"개구리목",  cls:"양서류", legs:4, ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:1,bone:1,night:1,meat:1,plant:0,group:0,korea:1,tame:0,big:0 },
+
+  // ── 어류 ──
+  { name:"상어",   wiki:"상어",      cls:"어류",   legs:0, ears:0,tail:1,horns:0,fur:0,feather:0,scale:1,wings:0,flies:0,swim:1,eggs:1,bone:1,night:0,meat:1,plant:0,group:0,korea:1,tame:0,big:1 },
+  { name:"가오리", wiki:"가오리",    cls:"어류",   legs:0, ears:0,tail:1,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:1,bone:1,night:0,meat:1,plant:0,group:0,korea:1,tame:0,big:0 },
+  { name:"연어",   wiki:"연어",      cls:"어류",   legs:0, ears:0,tail:1,horns:0,fur:0,feather:0,scale:1,wings:0,flies:0,swim:1,eggs:1,bone:1,night:0,meat:1,plant:0,group:1,korea:1,tame:0,big:0 },
+  { name:"금붕어", wiki:"금붕어",    cls:"어류",   legs:0, ears:0,tail:1,horns:0,fur:0,feather:0,scale:1,wings:0,flies:0,swim:1,eggs:1,bone:1,night:0,meat:1,plant:1,group:1,korea:0,tame:1,big:0 },
+
+  // ── 곤충 ──
+  { name:"나비",   wiki:"나비",      cls:"곤충",   legs:6, ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:1,flies:1,swim:0,eggs:1,bone:0,night:0,meat:0,plant:1,group:0,korea:1,tame:0,big:0 },
+  { name:"꿀벌",   wiki:"꿀벌",      cls:"곤충",   legs:6, ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:1,flies:1,swim:0,eggs:1,bone:0,night:0,meat:0,plant:1,group:1,korea:1,tame:1,big:0 },
+  { name:"개미",   wiki:"개미",      cls:"곤충",   legs:6, ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:0,eggs:1,bone:0,night:0,meat:1,plant:1,group:1,korea:1,tame:0,big:0 },
+  { name:"잠자리", wiki:"잠자리",    cls:"곤충",   legs:6, ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:1,flies:1,swim:0,eggs:1,bone:0,night:0,meat:1,plant:0,group:0,korea:1,tame:0,big:0 },
+  { name:"사슴벌레",wiki:"사슴벌레", cls:"곤충",   legs:6, ears:0,tail:0,horns:1,fur:0,feather:0,scale:0,wings:1,flies:1,swim:0,eggs:1,bone:0,night:1,meat:0,plant:1,group:0,korea:1,tame:1,big:0 },
+  { name:"메뚜기", wiki:"메뚜기",    cls:"곤충",   legs:6, ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:1,flies:1,swim:0,eggs:1,bone:0,night:0,meat:0,plant:1,group:1,korea:1,tame:0,big:0 },
+  { name:"무당벌레",wiki:"무당벌레", cls:"곤충",   legs:6, ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:1,flies:1,swim:0,eggs:1,bone:0,night:0,meat:1,plant:0,group:0,korea:1,tame:0,big:0 },
+
+  // ── 그 밖의 무척추동물 ──
+  { name:"거미",   wiki:"거미",      cls:"거미류", legs:8, ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:0,eggs:1,bone:0,night:1,meat:1,plant:0,group:0,korea:1,tame:0,big:0 },
+  { name:"게",     wiki:"게",        cls:"갑각류", legs:10,ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:1,bone:0,night:0,meat:1,plant:1,group:0,korea:1,tame:0,big:0 },
+  { name:"새우",   wiki:"새우",      cls:"갑각류", legs:10,ears:0,tail:1,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:1,bone:0,night:1,meat:1,plant:1,group:1,korea:1,tame:0,big:0 },
+  { name:"문어",   wiki:"문어",      cls:"연체동물",legs:8,ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:1,bone:0,night:1,meat:1,plant:0,group:0,korea:1,tame:0,big:0 },
+  { name:"오징어", wiki:"오징어",    cls:"연체동물",legs:10,ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:1,bone:0,night:1,meat:1,plant:0,group:1,korea:1,tame:0,big:0 },
+  { name:"달팽이", wiki:"달팽이",    cls:"연체동물",legs:0,ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:0,eggs:1,bone:0,night:1,meat:0,plant:1,group:0,korea:1,tame:0,big:0 },
+  { name:"해파리", wiki:"해파리",    cls:"자포동물",legs:0,ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:1,eggs:1,bone:0,night:0,meat:1,plant:0,group:1,korea:1,tame:0,big:0 },
+  { name:"지렁이", wiki:"지렁이",    cls:"환형동물",legs:0,ears:0,tail:0,horns:0,fur:0,feather:0,scale:0,wings:0,flies:0,swim:0,eggs:1,bone:0,night:1,meat:0,plant:1,group:0,korea:1,tame:0,big:0 },
+];
+
+// 아래 특징들은 해당하는 동물이 적어서, 표 대신 이름 목록으로 붙인다.
+// (이렇게 하면 "달팽이와 지렁이" 처럼 헷갈리는 짝도 질문으로 구별할 수 있다)
+// 위키백과 대표 사진이 '여러 마리 모음(콜라주)'인 동물이 있다.
+// 그런 사진은 실루엣 게임에 맞지 않아서, 한 마리만 나오는 다른 문서의 사진을 쓴다.
+// (설명은 원래 문서 그대로 — 사진만 바꾼다)
+const PHOTO_FROM = {
+  "개":     "진돗개",        // 원래 사진: 여러 견종 털 비교
+  "고양이": "샴고양이",      // 원래 사진: 여러 고양이 포스터
+  "박쥐":   "관박쥐",        // 원래 사진: 여러 박쥐 그림 모음
+  "뱀":     "구렁이",        // 원래 사진: 여러 뱀 모음
+  "거미":   "타란툴라",      // 원래 사진: 여러 거미 모음
+};
+
+const TRAITS = {
+  shell: ["거북", "달팽이", "게", "새우"],        // 껍데기·등딱지가 있음
+  slim:  ["뱀", "지렁이", "잠자리", "연어"],      // 몸이 가늘고 길쭉함
+  huge:  ["고래"],                                 // 몸길이 10m 이상
+  bw:    ["까치", "얼룩말", "펭귄"],              // 몸이 검은색과 흰색
+  stripe:["호랑이", "얼룩말", "꿀벌"],            // 줄무늬가 있음
+};
+
+// ── 크기 (1: 손바닥 · 2: 고양이 · 3: 사람 · 4: 말·곰 · 5: 코끼리 이상) ──
+const SIZE_GROUP = {
+  1: ["나비","꿀벌","개미","잠자리","사슴벌레","메뚜기","무당벌레","거미","달팽이","지렁이","새우","참새","금붕어"],
+  2: ["고양이","토끼","다람쥐","고슴도치","박쥐","게","문어","오징어","해파리","까치","앵무새","도마뱀","개구리","오리","닭","여우"],
+  3: ["개","늑대","돼지","양","사슴","원숭이","펭귄","올빼미","독수리","기러기","거북","뱀","물개","연어","가오리","캥거루"],
+  4: ["말","소","낙타","곰","사자","호랑이","얼룩말","악어","상어","돌고래","타조"],
+  5: ["코끼리","기린","하마","고래"],
+};
+const SIZE_LABEL = { 1:"손바닥에 올릴 만큼 작습니다", 2:"고양이만 합니다", 3:"사람만 합니다",
+                     4:"사람보다 큽니다", 5:"아주 거대합니다" };
+
+// ── 빠르기 (3: 빠름 · 2: 보통 · 1: 느림) ──
+const SPEED_GROUP = {
+  3: ["말","얼룩말","사자","호랑이","늑대","여우","사슴","독수리","잠자리","돌고래","타조","상어","토끼","캥거루","참새","까치","박쥐"],
+  1: ["달팽이","지렁이","거북","해파리","고슴도치","하마"],
+};
+const SPEED_LABEL = { 3:"아주 빠르게 움직입니다", 2:"보통 빠르기입니다", 1:"아주 느리게 움직입니다" };
+
+// ── 사는 곳 (여러 곳일 수 있다) ──
+const HABITAT_GROUP = {
+  tree:  ["다람쥐","원숭이","앵무새","사슴벌레","올빼미","까치","참새","무당벌레","박쥐"],
+  water: ["돌고래","고래","상어","가오리","연어","금붕어","문어","오징어","해파리","게","새우","개구리","물개","펭귄","거북","하마","오리","기러기"],
+  under: ["지렁이","개미"],
+  sky:   ["독수리","기러기","잠자리","나비","꿀벌","박쥐","까치","참새","앵무새","메뚜기","무당벌레"],
+};
+const HABITAT_LABEL = { tree:"나무 위", water:"물속·물가", under:"땅속", sky:"하늘", ground:"땅 위" };
+
+// ── 몸 색 (여러 색일 수 있다) ──
+const COLOR_GROUP = {
+  brown: ["개","여우","다람쥐","사슴","곰","말","낙타","원숭이","고슴도치","참새","올빼미","독수리","지렁이","달팽이","사슴벌레","소","닭","고양이","돼지","캥거루","뱀","거북","악어","새우"],
+  black: ["까치","펭귄","곰","개미","거미","오징어","사슴벌레","소","고양이","얼룩말","타조","잠자리"],
+  white: ["까치","펭귄","양","오리","기러기","토끼","고양이","얼룩말","해파리"],
+  gray:  ["코끼리","하마","돌고래","고래","상어","늑대","가오리","물개","박쥐","악어","문어","해파리"],
+  yellow:["사자","기린","꿀벌","금붕어","앵무새","메뚜기"],
+  red:   ["무당벌레","게","금붕어","연어","문어"],
+  green: ["개구리","도마뱀","메뚜기","나비","앵무새","거북","뱀","잠자리"],
+  orange:["호랑이","여우","금붕어","게","연어"],
+};
+const COLOR_LABEL = { brown:"갈색", black:"검은색", white:"흰색", gray:"회색",
+                      yellow:"노란색", red:"붉은색", green:"초록색", orange:"주황색" };
+
+// 위에서 정리한 내용을 동물 하나하나에 붙여준다
+ANIMALS.forEach(a => {
+  for (const key of Object.keys(TRAITS)) a[key] = TRAITS[key].includes(a.name) ? 1 : 0;
+
+  a.size = 2;
+  for (const s of Object.keys(SIZE_GROUP)) if (SIZE_GROUP[s].includes(a.name)) a.size = Number(s);
+
+  a.speed = 2;
+  for (const s of Object.keys(SPEED_GROUP)) if (SPEED_GROUP[s].includes(a.name)) a.speed = Number(s);
+
+  a.habitat = Object.keys(HABITAT_GROUP).filter(h => HABITAT_GROUP[h].includes(a.name));
+  if (a.habitat.length === 0) a.habitat = ["ground"];
+
+  a.colors = Object.keys(COLOR_GROUP).filter(c => COLOR_GROUP[c].includes(a.name));
+});
+
+// 오답일 때 알려줄 사실을 만들 때 쓰는 도우미
+function sayHabitat(a) {
+  return a.habitat.map(h => HABITAT_LABEL[h]).join("·") + "에서 삽니다";
+}
+function sayColor(a) {
+  if (a.colors.length === 0) return "색이 다양합니다";
+  return "주로 " + a.colors.map(c => COLOR_LABEL[c]).join("·") + " 입니다";
+}
+function sayLegs(a) {
+  return a.legs === 0 ? "다리가 없습니다" : "다리가 " + a.legs + "개입니다";
+}
+
+// ============================================================
+// ❓ 질문 목록 — 매번 무작위로 골라 보여준다
+//   q    : 질문   check: 예/아니오 판단
+//   fact : 답이 '아니오'일 때 알려줄 사실 (예: "아니오 · 다리가 6개입니다")
+// ============================================================
+const QUESTIONS = [
+  // ── 생김새 ──
+  { g:"생김새", q:"다리가 4개인가요?",         check: a => a.legs === 4,  fact: sayLegs },
+  { g:"생김새", q:"다리가 2개인가요?",         check: a => a.legs === 2,  fact: sayLegs },
+  { g:"생김새", q:"다리가 6개 이상인가요?",    check: a => a.legs >= 6,   fact: sayLegs },
+  { g:"생김새", q:"다리가 없나요?",            check: a => a.legs === 0,  fact: sayLegs },
+  { g:"생김새", q:"꼬리가 있나요?",            check: a => !!a.tail,      fact: a => a.tail ? "꼬리가 있습니다" : "꼬리가 없습니다" },
+  { g:"생김새", q:"쫑긋한 귀가 보이나요?",     check: a => !!a.ears,      fact: a => a.ears ? "귀가 보입니다" : "겉으로 드러난 귀가 없습니다" },
+  { g:"생김새", q:"뿔이 있나요?",              check: a => !!a.horns,     fact: a => a.horns ? "뿔이 있습니다" : "뿔이 없습니다" },
+  { g:"생김새", q:"털이 있나요?",              check: a => !!a.fur,       fact: a => a.fur ? "털이 있습니다" : (a.feather ? "털 대신 깃털이 있습니다" : (a.scale ? "털 대신 비늘이 있습니다" : "털이 없습니다")) },
+  { g:"생김새", q:"깃털이 있나요?",            check: a => !!a.feather,   fact: a => a.feather ? "깃털이 있습니다" : (a.fur ? "깃털 대신 털이 있습니다" : "깃털이 없습니다") },
+  { g:"생김새", q:"비늘이 있나요?",            check: a => !!a.scale,     fact: a => a.scale ? "비늘이 있습니다" : "비늘이 없습니다" },
+  { g:"생김새", q:"날개가 있나요?",            check: a => !!a.wings,     fact: a => a.wings ? "날개가 있습니다" : "날개가 없습니다" },
+  { g:"생김새", q:"껍데기나 등딱지가 있나요?", check: a => !!a.shell,     fact: a => a.shell ? "껍데기가 있습니다" : "껍데기가 없습니다" },
+  { g:"생김새", q:"몸이 가늘고 길쭉한가요?",   check: a => !!a.slim,      fact: a => a.slim ? "가늘고 길쭉합니다" : "길쭉한 몸은 아닙니다" },
+
+  // ── 색·크기·빠르기 ──
+  { g:"색·크기", q:"몸에 줄무늬가 있나요?",     check: a => !!a.stripe,   fact: a => a.stripe ? "줄무늬가 있습니다" : "줄무늬는 없습니다" },
+  { g:"색·크기", q:"몸이 검은색과 흰색인가요?", check: a => !!a.bw,       fact: sayColor },
+  { g:"색·크기", q:"갈색 계열인가요?",          check: a => a.colors.includes("brown"), fact: sayColor },
+  { g:"색·크기", q:"몸에 노란색이 있나요?",     check: a => a.colors.includes("yellow"), fact: sayColor },
+  { g:"색·크기", q:"몸이 회색인가요?",          check: a => a.colors.includes("gray"),   fact: sayColor },
+  { g:"색·크기", q:"초록색이 있나요?",          check: a => a.colors.includes("green"),  fact: sayColor },
+  { g:"색·크기", q:"주황색이 있나요?",          check: a => a.colors.includes("orange"), fact: sayColor },
+  { g:"색·크기", q:"손바닥에 올릴 만큼 작나요?",check: a => a.size <= 1,  fact: a => SIZE_LABEL[a.size] },
+  { g:"색·크기", q:"어른 사람보다 큰가요?",     check: a => a.size >= 4,  fact: a => SIZE_LABEL[a.size] },
+  { g:"색·크기", q:"몸길이가 10m를 넘나요?",    check: a => !!a.huge,     fact: a => SIZE_LABEL[a.size] },
+  { g:"색·크기", q:"아주 빠르게 움직이나요?",   check: a => a.speed === 3, fact: a => SPEED_LABEL[a.speed] },
+  { g:"색·크기", q:"아주 느리게 움직이나요?",   check: a => a.speed === 1, fact: a => SPEED_LABEL[a.speed] },
+
+  // ── 분류 ──
+  { g:"분류",   q:"포유류인가요?",             check: a => a.cls === "포유류", fact: a => a.cls + "입니다" },
+  { g:"분류",   q:"새(조류)인가요?",           check: a => a.cls === "조류",   fact: a => a.cls + "입니다" },
+  { g:"분류",   q:"곤충인가요?",               check: a => a.cls === "곤충",   fact: a => a.cls + "입니다" },
+  { g:"분류",   q:"파충류인가요?",             check: a => a.cls === "파충류", fact: a => a.cls + "입니다" },
+  { g:"분류",   q:"물고기(어류)인가요?",       check: a => a.cls === "어류",   fact: a => a.cls + "입니다" },
+  { g:"분류",   q:"등뼈가 있나요?",            check: a => !!a.bone, fact: a => a.bone ? "등뼈가 있는 척추동물입니다" : "등뼈가 없는 무척추동물입니다" },
+  { g:"분류",   q:"알을 낳나요?",              check: a => !!a.eggs, fact: a => a.eggs ? "알을 낳습니다" : "새끼를 낳습니다" },
+  { g:"분류",   q:"새끼를 낳나요?",            check: a => !a.eggs,  fact: a => a.eggs ? "알을 낳습니다" : "새끼를 낳습니다" },
+
+  // ── 사는 곳 ──
+  { g:"사는 곳", q:"물속이나 물가에서 사나요?", check: a => a.habitat.includes("water"), fact: sayHabitat },
+  { g:"사는 곳", q:"나무 위에서 지내나요?",     check: a => a.habitat.includes("tree"),  fact: sayHabitat },
+  { g:"사는 곳", q:"땅속에서 지내나요?",        check: a => a.habitat.includes("under"), fact: sayHabitat },
+  { g:"사는 곳", q:"하늘을 자주 날아다니나요?", check: a => a.habitat.includes("sky"),   fact: sayHabitat },
+  { g:"사는 곳", q:"한국 야생에서 볼 수 있나요?", check: a => !!a.korea, fact: a => a.korea ? "한국에서도 볼 수 있습니다" : "한국 야생에는 살지 않습니다" },
+  { g:"사는 곳", q:"사람이 기르기도 하나요?",   check: a => !!a.tame,  fact: a => a.tame ? "사람이 기르기도 합니다" : "사람이 기르지는 않습니다" },
+
+  // ── 생활 ──
+  { g:"생활",   q:"날 수 있나요?",             check: a => !!a.flies, fact: a => a.flies ? "날 수 있습니다" : "날지 못합니다" },
+  { g:"생활",   q:"헤엄칠 수 있나요?",         check: a => !!a.swim,  fact: a => a.swim ? "헤엄칠 수 있습니다" : "헤엄치지 못합니다" },
+  { g:"생활",   q:"밤에 주로 활동하나요?",     check: a => !!a.night, fact: a => a.night ? "밤에 활동합니다" : "낮에 활동합니다" },
+  { g:"생활",   q:"고기를 먹나요?",            check: a => !!a.meat,  fact: a => a.meat && a.plant ? "고기도 풀도 먹습니다" : (a.meat ? "고기를 먹습니다" : "풀·열매를 먹습니다") },
+  { g:"생활",   q:"풀이나 열매를 먹나요?",     check: a => !!a.plant, fact: a => a.meat && a.plant ? "고기도 풀도 먹습니다" : (a.plant ? "풀·열매를 먹습니다" : "고기를 먹습니다") },
+  { g:"생활",   q:"무리 지어 사나요?",         check: a => !!a.group, fact: a => a.group ? "무리 지어 삽니다" : "혼자 지냅니다" },
+];
+
+const MAX_QUESTIONS = 6;   // 한 문제에 쓸 수 있는 질문 수
+const SHOW_PER_GROUP = 4;  // 묶음마다 보여줄 질문 수 (매번 다르게 뽑는다)
+const CHOICE_COUNT = 10;   // 정답 보기 개수
+const TILE_COUNT = 25;     // 사진을 덮는 타일 (5 x 5)
+
+// ============================================================
+// 🎮 게임 상태
+// ============================================================
+let answer = null;         // 이번 문제의 정답 동물
+let answerData = null;     // 위키에서 받아온 사진·설명
+let questionsLeft = MAX_QUESTIONS;
+let askedIdx = [];         // 이미 물어본 질문 번호
+let choices = [];          // 보기로 보여줄 동물들
+let shownQ = [];           // 이번 문제에 보여줄 질문 번호 (매번 다르게)
+let finished = false;
+let hiddenTiles = [];      // 아직 안 벗겨진 타일 번호
+
+// ============================================================
+// 🌐 위키백과에서 사진과 설명 가져오기 (fetch!)
+//   한 번 받아온 동물은 localStorage에 저장해 다시 부르지 않는다
+// ============================================================
+const WIKI_CACHE = "animalQuizWiki";
+
+function cacheGet(key) {
+  try { return (JSON.parse(localStorage.getItem(WIKI_CACHE) || "{}"))[key] || null; }
+  catch { return null; }
+}
+function cacheSet(key, value) {
+  try {
+    const c = JSON.parse(localStorage.getItem(WIKI_CACHE) || "{}");
+    c[key] = value;
+    localStorage.setItem(WIKI_CACHE, JSON.stringify(c));
+  } catch {}
+}
+
+// 위키백과 문서 하나를 가져온다 (한 번 받은 건 저장해 두고 다시 쓴다)
+async function fetchWiki(wikiTitle) {
+  const cached = cacheGet(wikiTitle);
+  if (cached) return cached;
+
+  const url = "https://ko.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(wikiTitle);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("위키백과에서 정보를 못 가져왔어요 (" + res.status + ")");
+  const data = await res.json();
+
+  const info = {
+    title: data.title,
+    image: (data.originalimage && data.originalimage.source) ||
+           (data.thumbnail && data.thumbnail.source) || "",
+    extract: data.extract || "",
+    link: (data.content_urls && data.content_urls.desktop && data.content_urls.desktop.page) || "",
+  };
+  cacheSet(wikiTitle, info);
+  return info;
+}
+
+// 동물 하나의 사진·설명을 마련한다
+//   보통은 문서 하나면 되지만, 대표 사진이 '모음 사진'인 동물은
+//   사진만 다른 문서에서 가져와 바꿔 끼운다.
+async function fetchAnimal(animal) {
+  const info = await fetchWiki(animal.wiki);
+  const photoPage = PHOTO_FROM[animal.name];
+  if (!photoPage) return info;
+
+  try {
+    const alt = await fetchWiki(photoPage);
+    if (alt.image) return { ...info, image: alt.image };
+  } catch (e) { /* 실패하면 원래 사진을 그대로 쓴다 */ }
+  return info;
+}
+
+// ============================================================
+// 🎬 새 문제 시작
+// ============================================================
+async function newGame() {
+  finished = false;
+  questionsLeft = MAX_QUESTIONS;
+  askedIdx = [];
+  answer = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
+
+  pickQuestions();   // 이번에 보여줄 질문 고르기
+  pickChoices();     // 이번 보기 고르기
+
+  // 화면 초기화
+  document.getElementById("resultBox").innerHTML = "";
+  document.getElementById("qLog").innerHTML = "";
+  document.getElementById("logCount").textContent = "0개";
+  const le = document.getElementById("logEmpty");
+  if (le) le.style.display = "block";
+  document.getElementById("photoCaption").textContent = "";
+  document.getElementById("photoBox").innerHTML =
+    '<div class="loading"><div class="spinner"></div><div>동물을 데려오는 중...</div></div>';
+
+  renderQuestions();
+  renderChoices();
+  updateScoreboard();
+
+  try {
+    answerData = await fetchAnimal(answer);
+    showPhoto(answerData.image);
+  } catch (err) {
+    document.getElementById("photoBox").innerHTML =
+      '<div class="loading" style="color:var(--coral)">⚠️<br>' + err.message + '</div>';
+  }
+}
+
+// 질문이 29개나 되므로, 묶음마다 몇 개씩만 무작위로 보여준다
+// (매번 질문이 달라져서 같은 동물이 나와도 새롭다)
+function pickQuestions() {
+  const byGroup = {};
+  QUESTIONS.forEach((item, i) => {
+    if (!byGroup[item.g]) byGroup[item.g] = [];
+    byGroup[item.g].push(i);
+  });
+  shownQ = [];
+  for (const g of Object.keys(byGroup)) {
+    shownQ.push(...shuffle([...byGroup[g]]).slice(0, SHOW_PER_GROUP));
+  }
+}
+
+// 보기는 '같은 분류' 동물을 많이 섞어서 헷갈리게 만든다
+// (포유류가 답인데 보기가 전부 곤충이면 너무 쉬우니까)
+function pickChoices() {
+  const others = ANIMALS.filter(a => a.name !== answer.name);
+  const same = shuffle(others.filter(a => a.cls === answer.cls));
+  const diff = shuffle(others.filter(a => a.cls !== answer.cls));
+  const picked = same.slice(0, Math.min(5, same.length));
+  for (const a of diff) {
+    if (picked.length >= CHOICE_COUNT - 1) break;
+    picked.push(a);
+  }
+  for (const a of same) {           // 그래도 모자라면 같은 분류에서 더 채운다
+    if (picked.length >= CHOICE_COUNT - 1) break;
+    if (!picked.includes(a)) picked.push(a);
+  }
+  choices = shuffle([answer, ...picked]);
+}
+
+// 사진을 타일로 덮어서 보여준다
+function showPhoto(src) {
+  const box = document.getElementById("photoBox");
+  box.classList.remove("win");
+  box.innerHTML =
+    '<img id="quizImg" src="' + src + '" alt="???">' +
+    '<div class="tiles" id="tiles"></div>' +
+    '<canvas class="confetti" id="confetti"></canvas>';
+
+  const tiles = document.getElementById("tiles");
+  hiddenTiles = [];
+  for (let i = 0; i < TILE_COUNT; i++) {
+    const d = document.createElement("div");
+    d.className = "tile";
+    d.id = "tile-" + i;
+    tiles.appendChild(d);
+    hiddenTiles.push(i);
+  }
+  updateReveal();
+}
+
+// 남은 질문 수에 따라 흐림 정도를 정한다 (질문할수록 또렷해짐)
+// 남은 질문 수에 따라 사진이 얼마나 드러날지 한 번에 정한다.
+//
+//   처음(질문 8개 남음)  : 아주 흐리고 어두워 형체만 보임
+//   중간(4개 남음)       : 윤곽과 색이 보이기 시작
+//   막판(1~2개 남음)     : 거의 다 보임 — 아직 못 맞혔다면 여기서 확신을 얻는다
+//
+// 남은 질문이 줄수록 '빠르게' 선명해지도록 제곱을 써서 곡선을 만든다.
+// (앞부분은 천천히, 뒷부분은 확 밝아진다)
+function updateReveal() {
+  const ratio = Math.max(0, questionsLeft) / MAX_QUESTIONS;   // 1 → 0
+  const hidden = Math.pow(ratio, 1.6);                        // 가려진 정도 (1 → 0)
+
+  // 타일도 같은 곡선으로 벗겨낸다
+  const shouldOff = Math.round(TILE_COUNT * (1 - hidden));
+  const offNow = TILE_COUNT - hiddenTiles.length;
+  if (shouldOff > offNow) peelTiles(shouldOff - offNow);
+
+  const img = document.getElementById("quizImg");
+  if (!img) return;
+
+  if (finished) {                       // 정답을 맞혔거나 끝나면 원본 그대로
+    img.style.filter = "none";
+    img.style.transform = "scale(1)";
+    return;
+  }
+
+  const blur   = 30 * hidden;                        // 30px → 0px
+  const bright = 1 - 0.62 * Math.pow(ratio, 1.3);    // 0.38 → 1
+  const sat    = 1 - 0.70 * Math.pow(ratio, 1.3);    // 0.30 → 1
+  img.style.filter = `blur(${blur.toFixed(1)}px) brightness(${bright.toFixed(2)}) saturate(${sat.toFixed(2)})`;
+  // 흐림이 클 때만 살짝 확대해서 가장자리가 비지 않게 한다
+  img.style.transform = `scale(${(1 + blur / 300).toFixed(3)})`;
+}
+
+// 타일 몇 개를 벗긴다
+function peelTiles(count) {
+  for (let i = 0; i < count && hiddenTiles.length > 0; i++) {
+    const pick = Math.floor(Math.random() * hiddenTiles.length);
+    const idx = hiddenTiles.splice(pick, 1)[0];
+    const t = document.getElementById("tile-" + idx);
+    if (t) t.classList.add("off");
+  }
+}
+
+// ============================================================
+// ❓ 질문하기
+// ============================================================
+function renderQuestions() {
+  // 묶음(생김새 / 분류 / 사는 모습)별로 제목을 달아 보여준다
+  const groups = {};
+  shownQ.forEach(i => {
+    const g = QUESTIONS[i].g;
+    if (!groups[g]) groups[g] = [];
+    groups[g].push(i);
+  });
+
+  let html = "";
+  for (const g of Object.keys(groups)) {
+    html += `<div class="q-group-title">— ${g} —</div><div class="q-list">`;
+    html += groups[g].map(i =>
+      `<button class="q-btn" id="q-${i}" onclick="ask(${i})"
+         ${askedIdx.includes(i) || questionsLeft <= 0 || finished ? "disabled" : ""}>
+         ${QUESTIONS[i].q}
+       </button>`
+    ).join("");
+    html += "</div>";
+  }
+  document.getElementById("qList").innerHTML = html;
+  document.getElementById("qLeft").textContent = questionsLeft;
+}
+
+function ask(i) {
+  if (finished || questionsLeft <= 0 || askedIdx.includes(i)) return;
+
+  const yes = QUESTIONS[i].check(answer);
+  askedIdx.push(i);
+  questionsLeft--;
+
+  // 기록에 남기기 — '아니오'면 실제로는 어떤지 알려준다
+  const fact = (!yes && QUESTIONS[i].fact) ? QUESTIONS[i].fact(answer) : "";
+  document.getElementById("qLog").insertAdjacentHTML("beforeend",
+    `<div class="q-log-item">
+       <span class="ans ${yes ? "yes" : "no"}">${yes ? "예" : "아니오"}</span>
+       <span>${QUESTIONS[i].q}${fact ? `<span class="fact">→ ${fact}</span>` : ""}</span>
+     </div>`);
+
+  const logEmpty = document.getElementById("logEmpty");
+  if (logEmpty) logEmpty.style.display = "none";
+  document.getElementById("logCount").textContent = askedIdx.length + "개";
+
+  // 새로 알아낸 내용이 늘 보이도록 기록을 맨 아래로 내린다
+  const logBox = document.getElementById("qLog");
+  logBox.scrollTop = logBox.scrollHeight;
+
+  updateReveal();    // 질문을 쓸수록 사진이 더 선명해진다
+  renderQuestions();
+  updateScoreboard();
+
+  if (questionsLeft === 0) {
+    document.getElementById("photoCaption").textContent =
+      "질문을 다 썼어요! 이제 정답을 골라보세요 🎯";
+  }
+}
+
+// ============================================================
+// 🎯 정답 고르기
+// ============================================================
+function renderChoices() {
+  document.getElementById("choices").innerHTML = choices.map((a, i) =>
+    `<button class="choice-btn" id="c-${i}" onclick="guess(${i})" ${finished ? "disabled" : ""}>${a.name}</button>`
+  ).join("");
+}
+
+function guess(i) {
+  if (finished) return;
+  const picked = choices[i];
+
+  if (picked.name === answer.name) {
+    finish(true);
+  } else {
+    // 틀리면 그 보기는 지워지고 질문 1개를 잃는다
+    const btn = document.getElementById("c-" + i);
+    btn.classList.add("wrong");
+    btn.disabled = true;
+    if (questionsLeft > 0) questionsLeft--;
+    updateReveal();
+    renderQuestions();
+    updateScoreboard();
+    document.getElementById("photoCaption").textContent = "아쉬워요! 다시 생각해볼까요? 🤔";
+  }
+}
+
+function finish(correct) {
+  finished = true;
+
+  // 남은 질문이 많을수록 점수가 높다
+  const score = correct ? 20 + questionsLeft * 10 : 0;   // 질문을 아낄수록 최대 100점
+  saveRecord(correct, score);
+
+  // 타일을 전부 벗기고 사진을 또렷하게
+  peelTiles(TILE_COUNT);   // 끝났으니 남은 타일을 모두 벗긴다
+  updateReveal();
+
+  renderQuestions();
+  renderChoices();
+  updateScoreboard(score);
+
+  document.getElementById("photoCaption").textContent = answerData ? answerData.title : answer.name;
+  if (correct) fireConfetti();   // 🎉 축하 색종이!
+  document.getElementById("resultBox").innerHTML = `
+    <div class="result">
+      <h3>${correct ? "🎉 정답!" : "😅 아쉬워요"} 답은 <span style="color:var(--teal)">${answer.name}</span>였어요</h3>
+      <div style="font-size:12px;color:var(--muted);">
+        질문 ${MAX_QUESTIONS - questionsLeft}개 사용 · 이번 점수 <b style="color:var(--yellow)">${score}점</b>
+      </div>
+      <div class="desc">${answerData ? escapeHtml(answerData.extract) : ""}</div>
+      <div class="src">📖 설명 출처: 위키백과${answerData && answerData.link ? ` · <a href="${answerData.link}" target="_blank" style="color:var(--teal)">더 읽기</a>` : ""}</div>
+    </div>
+    <button class="btn btn-main" onclick="newGame()">🔄 다음 문제</button>
+  `;
+}
+
+// ============================================================
+// 🎉 축포 (정답을 맞혔을 때)
+//   사진 위에 투명한 판(canvas)을 깔고, 아래 양쪽에서 색종이를 쏘아 올린다.
+//   색종이 하나하나가 '위치·속도·회전'을 가진 작은 조각이고,
+//   매 순간 속도에 중력을 더해 다시 그리면 날아가는 것처럼 보인다.
+// ============================================================
+const CONFETTI_COLORS = ["#5EEAD4", "#F5D547", "#FF6B9D", "#7C6AFF", "#7FD27F", "#FFA75E", "#FFFFFF"];
+
+function fireConfetti() {
+  const box = document.getElementById("photoBox");
+  const canvas = document.getElementById("confetti");
+  if (!box || !canvas || !canvas.getContext) return;
+
+  // 사진이 살짝 튀어오르는 효과
+  box.classList.add("win");
+
+  // 움직임을 줄이는 설정을 켠 사람에겐 애니메이션을 생략한다
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  const W = canvas.width = box.clientWidth;
+  const H = canvas.height = box.clientHeight;
+  const ctx = canvas.getContext("2d");
+
+  // 아래 양쪽 구석에서 안쪽 위로 쏘아 올린다
+  const pieces = [];
+  const cannons = [
+    { x: W * 0.08, y: H * 0.98, aim: -Math.PI / 3.2 },   // 왼쪽 → 오른쪽 위
+    { x: W * 0.92, y: H * 0.98, aim: -Math.PI + Math.PI / 3.2 },  // 오른쪽 → 왼쪽 위
+  ];
+
+  for (const c of cannons) {
+    for (let i = 0; i < 70; i++) {
+      const angle = c.aim + (Math.random() - 0.5) * 0.7;   // 부채꼴로 퍼지게
+      const speed = 7 + Math.random() * 8;
+      pieces.push({
+        x: c.x, y: c.y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size: 5 + Math.random() * 6,
+        color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+        rot: Math.random() * Math.PI,
+        vr: (Math.random() - 0.5) * 0.4,
+        life: 1,
+      });
+    }
+  }
+
+  const GRAVITY = 0.22;
+  const start = Date.now();
+
+  function frame() {
+    ctx.clearRect(0, 0, W, H);
+    let alive = 0;
+
+    for (const p of pieces) {
+      p.vy += GRAVITY;        // 중력
+      p.vx *= 0.99;           // 공기 저항
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rot += p.vr;
+      p.life -= 0.008;        // 서서히 사라진다
+
+      if (p.life <= 0 || p.y > H + 30) continue;
+      alive++;
+
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, Math.min(1, p.life));
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);   // 납작한 색종이
+      ctx.restore();
+    }
+
+    // 조각이 다 사라지거나 4초가 지나면 멈춘다
+    if (alive > 0 && Date.now() - start < 4000) {
+      requestAnimationFrame(frame);
+    } else {
+      ctx.clearRect(0, 0, W, H);
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+// ============================================================
+// 🏆 점수 기록 (localStorage)
+// ============================================================
+const REC_KEY = "animalQuizRecord";
+
+function getRecord() {
+  try { return JSON.parse(localStorage.getItem(REC_KEY) || '{"best":0,"streak":0,"played":0}'); }
+  catch { return { best: 0, streak: 0, played: 0 }; }
+}
+
+function saveRecord(correct, score) {
+  const r = getRecord();
+  r.played += 1;
+  r.streak = correct ? r.streak + 1 : 0;
+  if (score > r.best) r.best = score;
+  localStorage.setItem(REC_KEY, JSON.stringify(r));
+}
+
+function updateScoreboard(nowScore) {
+  const r = getRecord();
+  const expected = finished ? (nowScore || 0) : 20 + questionsLeft * 10;
+  document.getElementById("scoreNow").textContent = expected;
+
+  // 화면 구석 표시도 함께 갱신 (스크롤을 내려도 보인다)
+  const hud = document.getElementById("hud");
+  if (hud) {
+    document.getElementById("hudLeft").textContent = questionsLeft;
+    document.getElementById("hudScore").textContent = finished ? "끝!" : expected + "점 예상";
+    hud.classList.toggle("low", !finished && questionsLeft > 0 && questionsLeft <= 2);
+    hud.classList.toggle("none", !finished && questionsLeft === 0);
+  }
+  document.getElementById("scoreBest").textContent = r.best;
+  document.getElementById("streak").textContent = r.streak;
+  document.getElementById("played").textContent = r.played;
+}
+
+// ============================================================
+// 🛠️ 도우미
+// ============================================================
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function escapeHtml(str) {
+  return String(str == null ? "" : str)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// ============================================================
+// 시작!
+// ============================================================
+newGame();
+</script>
+
+</body>
+</html>
