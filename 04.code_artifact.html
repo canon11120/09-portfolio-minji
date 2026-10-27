@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>밸런스 게임</title>
+</head>
+<body>
+
+    <!-- 진행 상황 및 타이머 표시 -->
+    <h3 id="progress">1 / 10</h3>
+    <h4 id="timer" style="color: red; margin-top: 5px;">남은 시간: 5초</h4>
+
+    <!-- 질문 -->
+    <h1 id="question">질문을 불러오는 중...</h1>
+
+    <!-- 선택 버튼 -->
+    <button id="btnA" onclick="selectOption(0)"></button>
+    <button id="btnB" onclick="selectOption(1)"></button>
+
+    <!-- 결과 출력 영역 -->
+    <p id="result"></p>
+
+    <!-- final type result container -->
+    <div id="typeResultContainer" style="display:none; margin-top: 15px;">
+        <h2 id="typeTitle"></h2>
+        <p id="typeDesc"></p>
+    </div>
+
+    <!-- 네비게이션 버튼 -->
+    <div>
+        <button id="btnPrev" onclick="prevQuestion()">이전</button>
+        <button id="btnSkip" onclick="skipQuestion()">건너뛰기</button>
+        <button id="btnRestart" onclick="restartGame()">처음부터</button>
+    </div>
+
+    <script>
+        // 원본 질문 10개 배열 (각 선택지에 성향 코드 tag: 'reality', 'romance', 'pleasure', 'efficiency' 부여)
+        const rawQuestions = [
+            { a: "평생 라면", b: "평생 치킨", tagA: "pleasure", tagB: "pleasure" },
+            { a: "초능력 얻기", b: "100억 받기", tagA: "romance", tagB: "reality" },
+            { a: "여름만 계속되기", b: "겨울만 계속되기", tagA: "pleasure", tagB: "pleasure" },
+            { a: "평생 탄산음료 안 마시기", b: "평생 물만 마시기", tagA: "efficiency", tagB: "efficiency" },
+            { a: "과거로 가기", b: "미래로 가기", tagA: "romance", tagB: "romance" },
+            { a: "잠 안 자도 피곤하지 않기", b: "먹어도 살 안 찌기", tagA: "efficiency", tagB: "efficiency" },
+            { a: "모든 사람에게 사랑받기", b: "내가 원하는 한 사람에게 사랑받기", tagA: "reality", tagB: "romance" },
+            { a: "평생 스마트폰 없이 살기", b: "평생 컴퓨터 없이 살기", tagA: "efficiency", tagB: "reality" },
+            { a: "월 200만 원 받고 평생 놀기", b: "월 1000만 원 받고 매일 야근하기", tagA: "pleasure", tagB: "reality" },
+            { a: "평생 매운 음식 못 먹기", b: "평생 단 음식 못 먹기", tagA: "efficiency", tagB: "pleasure" }
+        ];
+
+        // 4가지 타입 정보
+        const typesInfo = {
+            reality: {
+                title: "🎯 [현실주의 실속파]",
+                desc: "실속과 안정적인 이득을 중요하게 생각하는 타입입니다. 확실하고 현실적인 가치를 신중하게 판단하네요!"
+            },
+            romance: {
+                title: "✨ [이상주의 낭만파]",
+                desc: "꿈과 낭만, 극적인 상황이나 로망을 꿈꾸는 타입입니다. 감성과 매력을 중요하게 여기는 낭만파입니다!"
+            },
+            pleasure: {
+                title: "🍕 [본능 충족 쾌락파]",
+                desc: "현재의 즐거움과 행복, 감각적인 만족을 최우선으로 생각하는 타입입니다. 소소하고 확실한 쾌락을 즐깁니다!"
+            },
+            efficiency: {
+                title: "⚡ [절제 효율 갓생파]",
+                desc: "자기관리와 생산성, 최적의 효율을 지향하는 타입입니다. 불필요한 낭비를 줄이고 알찬 삶을 원하네요!"
+            }
+        };
+
+        let questions = [];
+        let currentIndex = 0;
+        // 선택한 답변 저장 (질문 index별 태그 저장)
+        let userChoices = [];
+        let timerInterval = null;
+        let timeLeft = 5;
+
+        // 질문 순서 섞기 (Fisher-Yates 알고리즘)
+        function shuffleQuestions() {
+            questions = JSON.parse(JSON.stringify(rawQuestions));
+            for (let i = questions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [questions[i], questions[j]] = [questions[j], questions[i]];
+            }
+        }
+
+        // 타이머 시작
+        function startTimer() {
+            stopTimer(); // 기존 타이머 정지
+            timeLeft = 5;
+            document.getElementById('timer').innerText = "남은 시간: " + timeLeft + "초";
+            document.getElementById('timer').style.display = "block";
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                if (timeLeft > 0) {
+                    document.getElementById('timer').innerText = "남은 시간: " + timeLeft + "초";
+                } else {
+                    // 시간 초과 시 랜덤 선택
+                    stopTimer();
+                    const randomChoice = Math.floor(Math.random() * 2);
+                    selectOption(randomChoice, true);
+                }
+            }, 1000);
+        }
+
+        // 타이머 정지
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function renderQuestion() {
+            stopTimer();
+            // 버튼 표시 여부 제어
+            document.getElementById('btnPrev').disabled = (currentIndex === 0);
+
+            if (currentIndex >= questions.length) {
+                showTypeResult();
+                return;
+            }
+
+            document.getElementById('typeResultContainer').style.display = "none";
+            document.getElementById('btnA').style.display = "inline-block";
+            document.getElementById('btnB').style.display = "inline-block";
+            document.getElementById('btnSkip').style.display = "inline-block";
+
+            const q = questions[currentIndex];
+            document.getElementById('progress').innerText = (currentIndex + 1) + " / " + questions.length;
+            document.getElementById('question').innerText = q.a + " vs " + q.b;
+            document.getElementById('btnA').innerText = q.a;
+            document.getElementById('btnB').innerText = q.b;
+
+            // 5초 타이머 작동 시작
+            startTimer();
+        }
+
+        function selectOption(optionIndex, isTimeout = false) {
+            stopTimer();
+            const q = questions[currentIndex];
+            const choice = optionIndex === 0 ? q.a : q.b;
+            const chosenTag = optionIndex === 0 ? q.tagA : q.tagB;
+
+            // 선택 결과 저장
+            userChoices[currentIndex] = chosenTag;
+
+            if (isTimeout) {
+                document.getElementById('result').innerText = '⏰ 시간 초과! 랜덤으로 [' + choice + '] 선택!';
+            } else {
+                document.getElementById('result').innerText = choice + ' 선택!';
+            }
+
+            currentIndex++;
+            renderQuestion();
+        }
+
+        function showTypeResult() {
+            stopTimer();
+            document.getElementById('timer').style.display = "none";
+            document.getElementById('progress').innerText = "게임 종료!";
+            document.getElementById('question').innerText = "당신의 밸런스 게임 타입 결과";
+            document.getElementById('btnA').style.display = "none";
+            document.getElementById('btnB').style.display = "none";
+            document.getElementById('btnSkip').style.display = "none";
+            document.getElementById('result').innerText = "";
+
+            // 가장 많이 선택한 성향 태그 계산
+            const scores = { reality: 0, romance: 0, pleasure: 0, efficiency: 0 };
+            userChoices.forEach(tag => {
+                if (tag && scores[tag] !== undefined) {
+                    scores[tag]++;
+                }
+            });
+
+            // 최고점 태그 찾기
+            let topType = 'reality';
+            let maxCount = -1;
+            for (const type in scores) {
+                if (scores[type] > maxCount) {
+                    maxCount = scores[type];
+                    topType = type;
+                }
+            }
+
+            const resultInfo = typesInfo[topType];
+            document.getElementById('typeTitle').innerText = resultInfo.title;
+            document.getElementById('typeDesc').innerText = resultInfo.desc;
+            document.getElementById('typeResultContainer').style.display = "block";
+        }
+
+        function prevQuestion() {
+            stopTimer();
+            if (currentIndex > 0) {
+                currentIndex--;
+                document.getElementById('result').innerText = '';
+                renderQuestion();
+            }
+        }
+
+        function skipQuestion() {
+            stopTimer();
+            userChoices[currentIndex] = null; // 건너뛰면 점수 반영 안 함
+            document.getElementById('result').innerText = '건너뜀!';
+            currentIndex++;
+            renderQuestion();
+        }
+
+        function restartGame() {
+            stopTimer();
+            currentIndex = 0;
+            userChoices = [];
+            document.getElementById('result').innerText = '';
+            shuffleQuestions(); // 게임 재시작 시 질문 순서 섞기
+            renderQuestion();
+        }
+
+        // 게임 최초 시작 시 셔플 및 진행
+        shuffleQuestions();
+        renderQuestion();
+    </script>
+
+</body>
+</html>
